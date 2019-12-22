@@ -1,0 +1,15 @@
+[submodule "third_party/glfw"]
+	path = third_party/glfw
+	url = https://github.com/glfw/glfw
+[submodule "third_party/filesystem"]
+	path = third_party/filesystem
+	url = https://github.com/gulrak/filesystem
+[submodule "third_party/StaticJSON"]
+	path = third_party/StaticJSON
+	url = https://github.com/netheril96/StaticJSON.git
+[submodule "third_party/rapidjson"]
+	path = third_party/rapidjson
+	url = https://github.com/Tencent/rapidjson.git
+[submodule "third_party/toml11"]
+	path = third_party/toml11
+	url = https://github.com/ToruNiina/toml11
