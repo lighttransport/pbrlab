@@ -16,3 +16,6 @@
 [submodule "third_party/variant"]
 	path = third_party/variant
 	url = https://github.com/mpark/variant.git
+[submodule "third_party/embree-aarch64"]
+	path = third_party/embree-aarch64
+	url = https://github.com/lighttransport/embree-aarch64.git
