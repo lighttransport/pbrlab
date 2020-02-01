@@ -1,0 +1,10 @@
+---
+BasedOnStyle: Google
+AccessModifierOffset: -2
+AlignConsecutiveAssignments: true
+AlignTrailingComments: true
+BreakBeforeBraces: Attach
+IndentWidth: 2
+Standard: Cpp11
+TabWidth: 2
+UseTab: Never
