@@ -46,10 +46,11 @@ pbrlab is licensed under MIT license.
 * stb_image, stb_image_write, stb_image_resize : Public domain
 * glfw3 : zlib/libpng license.
 * glad : unlicense?
-* ghc filesystem : BSD-3 license.
 * ionicons : MIT license.
 * Roboto font : Apache 2.0 license.
 * toml11 : MIT license.
 * rapidjson : MIT license.
 * StaticJSON : MIT license.
 * ghc filesystem : BSD-3 license.
+* mpark variant : BSD-1 license.
+* Embree-aarch64 : Apache-2.0
