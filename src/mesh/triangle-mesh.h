@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "attribute.h"
+#include "mesh/attribute.h"
 #include "type.h"
 
 namespace pbrlab {

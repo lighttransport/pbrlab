@@ -1,4 +1,4 @@
-#include "triangle-mesh.h"
+#include "mesh/triangle-mesh.h"
 
 #include <assert.h>
 #include <math.h>

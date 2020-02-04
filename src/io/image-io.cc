@@ -1,4 +1,4 @@
-#include "image-io.h"
+#include "io/image-io.h"
 
 #include <ctype.h>  // tolower
 
