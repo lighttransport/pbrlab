@@ -2,6 +2,9 @@ set(PBRLAB_SOURCES
     render.cc
     tinyexr.cc
     tiny_obj_loader.cc
+    io/image-io.cc
+    io/stb_image.cc
+    io/stb_image_write.cc
     mesh/triangle-mesh.cc
    )
 

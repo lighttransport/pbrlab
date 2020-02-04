@@ -17,8 +17,8 @@ find_package(Sanitizers) # Address sanitizer (-DSANITIZE_ADDRESS=ON)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO}  -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}  -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 
 
 # Check C++11 support
@@ -63,6 +63,8 @@ endif()
 # - OpenGL
 # - glfw3
 # - Embree3
+# - mpark variant
+# - ghc filesystem
 # TODO check third_party
 
 # [OpenGL]
@@ -94,8 +96,16 @@ if (PBRLAB_WITH_EMBREE)
   list(APPEND PBRLAB_EXT_LIBRARIES embree)
 endif (PBRLAB_WITH_EMBREE)
 
+# [mpark variant]
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/variant)
+list(APPEND PBRLAB_EXT_LIBRARIES mpark_variant)
 
-set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic)
+# [ghc filesystem]
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/filesystem)
+list(APPEND PBRLAB_EXT_LIBRARIES ghc_filesystem)
+
+
+set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)
 
 add_subdirectory(src)
 add_subdirectory(cli)
