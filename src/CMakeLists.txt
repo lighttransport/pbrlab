@@ -2,6 +2,7 @@ set(PBRLAB_SOURCES
     render.cc
     tinyexr.cc
     tiny_obj_loader.cc
+    mesh/triangle-mesh.cc
    )
 
 add_library(${BUILD_TARGET} SHARED
