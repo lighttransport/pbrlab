@@ -49,7 +49,7 @@ public:
   ///
   /// Draw random number[0.0, 1.0)
   ///
-  inline float Draw() {
+  inline float Draw() const {
     // https://github.com/wjakob/pcg32/blob/master/pcg32.h
 
     union {
@@ -65,7 +65,7 @@ public:
   }
 
 private:
-  pcg32_state_t state_;
+  mutable pcg32_state_t state_;
 };
 
 }  // namespace pbrlab

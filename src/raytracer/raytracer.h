@@ -6,10 +6,6 @@
 #include <memory>
 
 namespace pbrlab {
-namespace raytracer {
-
-enum GeometryType { kTriangleMesh = 0, kNone };
-
 struct TraceResult {
   float normal_g[3]    = {1.0f, 0.0f, 0.0f};
   float t              = 1.0f;
@@ -19,6 +15,10 @@ struct TraceResult {
   uint32_t geom_id     = static_cast<uint32_t>(-1);  // local geom id
   uint32_t prim_id     = static_cast<uint32_t>(-1);  // primitive id
 };
+
+namespace raytracer {
+
+enum GeometryType { kTriangleMesh = 0, kNone };
 
 struct TraceOption {
   // TODO
@@ -65,7 +65,7 @@ public:
    * @param[in]  max_t ray max distance
    */
   TraceResult FirstHitTrace1(const float* ray_org, const float* ray_dir,
-                             const float min_t, const float max_t);
+                             const float min_t, const float max_t) const;
 
   /**
    * @fn
@@ -76,7 +76,7 @@ public:
    * @param[in]  max_t ray max distance
    */
   bool AnyHit1(const float* ray_org, const float* ray_dir, const float min_t,
-               const float max_t);
+               const float max_t) const;
 
 private:
   class Impl;

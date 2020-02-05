@@ -215,7 +215,7 @@ static RTCRayHit SetRayHit(const float* ray_org, const float* ray_dir,
 TraceResult Raytracer::Impl::FirstHitTrace1(const float* ray_org,
                                             const float* ray_dir,
                                             const float min_t,
-                                            const float max_t) {
+                                            const float max_t) const {
   RTCRayHit rayhit = SetRayHit(ray_org, ray_dir, min_t, max_t);
 
   IntersectContext context;
@@ -225,7 +225,7 @@ TraceResult Raytracer::Impl::FirstHitTrace1(const float* ray_org,
 }
 
 bool Raytracer::Impl::AnyHit1(const float* ray_org, const float* ray_dir,
-                              const float min_t, const float max_t) {
+                              const float min_t, const float max_t) const {
   RTCRayHit rayhit = SetRayHit(ray_org, ray_dir, min_t, max_t);
   IntersectContext context;
   const float tmp = rayhit.ray.tfar;

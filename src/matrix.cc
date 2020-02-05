@@ -33,6 +33,14 @@ static void vnormalize(float v[3]) {
   }
 }
 
+void Matrix::Copy(const float src[4][4], float out[4][4]) {
+  for (size_t i = 0; i < 4; ++i) {
+    for (size_t j = 0; j < 4; ++j) {
+      out[i][j] = src[i][j];
+    }
+  }
+}
+
 void Matrix::Print(float m[4][4]) {
   for (int i = 0; i < 4; i++) {
     printf("m[%d] = %f, %f, %f, %f\n", i, double(m[i][0]), double(m[i][1]),

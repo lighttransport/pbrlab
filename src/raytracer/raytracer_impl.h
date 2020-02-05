@@ -31,10 +31,10 @@ public:
   bool GetSceneAABB(float* bmin, float* bmax) const;
 
   TraceResult FirstHitTrace1(const float* ray_org, const float* ray_dir,
-                             const float min_t, const float max_t);
+                             const float min_t, const float max_t) const;
 
   bool AnyHit1(const float* ray_org, const float* ray_dir, const float min_t,
-               const float max_t);
+               const float max_t) const;
 
 private:
   // return new instance id

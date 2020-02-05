@@ -25,12 +25,12 @@ bool Raytracer::GetSceneAABB(float* bmin, float* bmax) const {
 
 TraceResult Raytracer::FirstHitTrace1(const float* ray_org,
                                       const float* ray_dir, const float min_t,
-                                      const float max_t) {
+                                      const float max_t) const {
   return impl_->FirstHitTrace1(ray_org, ray_dir, min_t, max_t);
 }
 
 bool Raytracer::AnyHit1(const float* ray_org, const float* ray_dir,
-                        const float min_t, const float max_t) {
+                        const float min_t, const float max_t) const {
   return impl_->AnyHit1(ray_org, ray_dir, min_t, max_t);
 }
 
