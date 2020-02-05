@@ -44,9 +44,7 @@ uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
   // Light
   {
     const uint32_t num_faces = triangle_mesh->GetNumFaces();
-    instance.light_param_ids.emplace_back(new uint32_t[num_faces]);
-    for (uint32_t i = 0; i < num_faces; ++i)
-      instance.light_param_ids.back()[i] = static_cast<uint32_t>(-1);
+    instance.light_param_ids.emplace_back(num_faces, uint32_t(-1));
   }
 
   // BVH

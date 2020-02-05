@@ -1,7 +1,9 @@
 set(PBRLAB_SOURCES
     image-utils.cc
+    light-manager.cc
     matrix.cc
     render.cc
+    scene.cc
     io/image-io.cc
     io/stb_image.cc
     io/stb_image_write.cc
