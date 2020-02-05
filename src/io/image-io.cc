@@ -23,8 +23,9 @@ namespace fs = std::filesystem;
 namespace fs = ghc::filesystem;
 #endif
 
-#include "stb_image.h"
-#include "stb_image_write.h"
+#include "io/stb_image.h"
+#include "io/stb_image_write.h"
+#include "io/tinyexr.h"
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -39,6 +40,35 @@ static T Clamp(const T x, const T a, const T b) {
 }
 
 template <typename T>
+static bool LoadExrImage(const std::string& filepath, std::vector<T>* pixels,
+                         size_t* width, size_t* height, size_t* channels) {
+  int w, h;
+  float* rgba;
+  const char* err = nullptr;
+  const int ret   = LoadEXR(&rgba, &w, &h, filepath.c_str(), &err);
+
+  if (ret == TINYEXR_SUCCESS) {
+    *width    = size_t(w);
+    *height   = size_t(h);
+    *channels = 4;
+
+    size_t n_elem = size_t(w * h);
+
+    // RGBA
+    for (size_t i = 0; i < n_elem; i++) {
+      (*pixels)[4 * i + 0] = T(rgba[4 * i + 0]);
+      (*pixels)[4 * i + 1] = T(rgba[4 * i + 1]);
+      (*pixels)[4 * i + 2] = T(rgba[4 * i + 2]);
+      (*pixels)[4 * i + 3] = T(rgba[4 * i + 3]);
+    }
+
+    free(rgba);
+    return true;
+  }
+  return false;
+}
+
+template <typename T>
 bool LoadImage(const std::string& filename, const std::string& asset_path,
                std::vector<T>* pixels, size_t* width, size_t* height,
                size_t* channels) {
@@ -47,6 +77,17 @@ bool LoadImage(const std::string& filename, const std::string& asset_path,
     return false;
   }
   const fs::path file_path = fs::path(asset_path) / filename;
+
+  if (std::is_same<float, T>::value || std::is_same<double, T>::value) {  // exr
+    const std::string file_extension = fs::path(filename).extension();
+
+    std::string tmp;
+    std::transform(file_extension.begin(), file_extension.end(), tmp.begin(),
+                   tolower);
+    if (file_extension == ".exr") {
+      return LoadExrImage(file_path.string(), pixels, width, height, channels);
+    }
+  }
 
   int tmp_w = 0;
   int tmp_h = 0;
