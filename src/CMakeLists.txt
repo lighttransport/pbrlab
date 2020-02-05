@@ -1,4 +1,5 @@
 set(PBRLAB_SOURCES
+    matrix.cc
     render.cc
     io/image-io.cc
     io/stb_image.cc
