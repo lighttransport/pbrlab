@@ -9,7 +9,8 @@ static inline float vdot(float a[3], float b[3]) {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
-static inline void vcross(float c[3], float a[3], float b[3]) {
+// static inline void vcross(float c[3], float a[3], float b[3]) {
+static inline void vcross(const float a[3], const float b[3], float c[3]) {
   c[0] = a[1] * b[2] - a[2] * b[1];
   c[1] = a[2] * b[0] - a[0] * b[2];
   c[2] = a[0] * b[1] - a[1] * b[0];
@@ -48,7 +49,8 @@ void Matrix::Print(float m[4][4]) {
   }
 }
 
-void Matrix::LookAt(float m[4][4], float eye[3], float lookat[3], float up[3]) {
+void Matrix::LookAt(const float eye[3], const float lookat[3],
+                    const float up[3], float m[4][4]) {
   float u[3], v[3];
   float look[3];
   look[0] = lookat[0] - eye[0];
@@ -56,10 +58,10 @@ void Matrix::LookAt(float m[4][4], float eye[3], float lookat[3], float up[3]) {
   look[2] = lookat[2] - eye[2];
   vnormalize(look);
 
-  vcross(u, look, up);
+  vcross(look, up, u);
   vnormalize(u);
 
-  vcross(v, u, look);
+  vcross(u, look, v);
   vnormalize(v);
 
 #if 0
@@ -202,7 +204,7 @@ void Matrix::Inverse(float m[4][4]) {
   }
 }
 
-void Matrix::Mult(float dst[4][4], float m0[4][4], float m1[4][4]) {
+void Matrix::Mult(const float m0[4][4], const float m1[4][4], float dst[4][4]) {
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       dst[i][j] = 0;
@@ -213,7 +215,7 @@ void Matrix::Mult(float dst[4][4], float m0[4][4], float m1[4][4]) {
   }
 }
 
-void Matrix::MultV(float dst[3], float m[4][4], float v[3]) {
+void Matrix::MultV(const float v[3], const float m[4][4], float dst[3]) {
   dst[0] = m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2] + m[3][0];
   dst[1] = m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2] + m[3][1];
   dst[2] = m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2] + m[3][2];
