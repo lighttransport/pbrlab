@@ -8,6 +8,8 @@ set(PBRLAB_SOURCES
     io/tiny_obj_loader.cc
     io/triangle-mesh-io.cc
     mesh/triangle-mesh.cc
+    raytracer/raytracer.cc
+    raytracer/raytracer_impl.cc
    )
 
 add_library(${BUILD_TARGET} SHARED

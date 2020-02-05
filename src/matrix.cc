@@ -206,12 +206,9 @@ void Matrix::Mult(float dst[4][4], float m0[4][4], float m1[4][4]) {
 }
 
 void Matrix::MultV(float dst[3], float m[4][4], float v[3]) {
-  // printf("v = %f, %f, %f\n", v[0], v[1], v[2]);
   dst[0] = m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2] + m[3][0];
   dst[1] = m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2] + m[3][1];
   dst[2] = m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2] + m[3][2];
-  // printf("m = %f, %f, %f\n", m[3][0], m[3][1], m[3][2]);
-  // printf("dst = %f, %f, %f\n", dst[0], dst[1], dst[2]);
 }
 
 }  // namespace pbrlab
