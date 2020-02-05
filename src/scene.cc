@@ -42,10 +42,7 @@ uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
   instance.material_ids.emplace_back(triangle_mesh.get()->GetMaterials());
 
   // Light
-  {
-    const uint32_t num_faces = triangle_mesh->GetNumFaces();
-    instance.light_param_ids.emplace_back(num_faces, uint32_t(-1));
-  }
+  { instance.light_param_ids.emplace_back(); }
 
   // BVH
   const std::vector<float>& vertices      = triangle_mesh.get()->GetVertices();

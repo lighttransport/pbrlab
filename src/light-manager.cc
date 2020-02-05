@@ -1,5 +1,6 @@
 #include "light-manager.h"
 
+#include <iostream>
 #include <numeric>
 
 #include "pbrlab-util.h"
@@ -84,16 +85,25 @@ void LightManager::RegisterInstanceMesh(const MeshInstance& instance,
   if (area_lights.size() <= instance.meshes.size())
     area_lights.resize(instance.meshes.size());
 
+  assert(instance.meshes.size() == instance.light_param_ids.size());
+
   for (uint32_t local_geom_id = 0; local_geom_id < instance.meshes.size();
        ++local_geom_id) {
     const MeshPtr mesh_ptr = instance.meshes[local_geom_id];
     const std::vector<uint32_t>& light_param_ids =
         instance.light_param_ids[local_geom_id];
 
+    if (light_param_ids.empty()) continue;
+
     if (mesh_ptr.index() == kTriangleMesh) {
       const std::shared_ptr<TriangleMesh>& triangle_mesh =
           mpark::get<kTriangleMesh>(mesh_ptr);
       const uint32_t num_face = triangle_mesh->GetNumFaces();
+
+      if (num_face != light_param_ids.size()) {
+        // TODO logger
+        std::cerr << "warning: invalid light param ids" << std::endl;
+      }
 
       bool have_emission = false;
       for (uint32_t face_id = 0; face_id < num_face; ++face_id) {
