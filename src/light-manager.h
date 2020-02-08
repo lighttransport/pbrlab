@@ -159,6 +159,7 @@ public:
         ret.emission   = area_light_param.emission;
         ret.pdf        = pdf;
 
+        return ret;
       } else {
         assert(false);
       }

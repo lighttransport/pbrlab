@@ -219,9 +219,8 @@ bool LoadTriangleMeshFromObj(const std::string& filename,
       meshes->emplace_back(triangle_mesh_name, out_attrib, face, normal_index,
                            texcoords, material_ids);
     }
-    std::vector<MaterialParameter> material_params;
     for (const auto& material : materials) {
-      material_params.emplace_back(ParseTinyObjMaterial(material));
+      material_params->emplace_back(ParseTinyObjMaterial(material));
     }
   }
 
