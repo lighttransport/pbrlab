@@ -86,7 +86,7 @@ const MaterialParameter* Scene::FetchMeshMaterialParamPtr(
   const MeshInstance& instance = instances_[trace_result.instance_id];
 
   assert(trace_result.geom_id < instance.material_ids.size());
-  const std::vector<uint32_t> material_ids =
+  const std::vector<uint32_t>& material_ids =
       instance.material_ids[trace_result.geom_id];
 
 #ifdef NDEBUG
