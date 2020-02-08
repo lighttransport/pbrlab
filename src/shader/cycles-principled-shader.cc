@@ -131,7 +131,8 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
 
   const auto cos_i = ret.omega_in[2];
 
-  Matrix::Inverse(Rgl);  // local to world
+  auto& Rlg = Rgl;
+  ShadingLocalToGlobal(ex, ey, ez, Rlg);  // local to world
   Matrix::MultV(ret.omega_in.v, Rgl, next_ray_dir->v);
 
   assert(std::abs(vdot(*next_ray_dir, ez) - ret.omega_in[2]) < kEps);

@@ -80,6 +80,31 @@ inline void GrobalToShadingLocal(const float3& ex, const float3& ey,
   mat[3][3] = 1.0f;
 }
 
+inline void ShadingLocalToGlobal(const float3& ex, const float3& ey,
+                                 const float3& ez, float mat[4][4]) {
+  // v' = v * M
+
+  mat[0][0] = ex[0];
+  mat[0][1] = ex[1];
+  mat[0][2] = ex[2];
+  mat[0][3] = 0.0f;
+
+  mat[1][0] = ey[0];
+  mat[1][1] = ey[1];
+  mat[1][2] = ey[2];
+  mat[1][3] = 0.0f;
+
+  mat[2][0] = ez[0];
+  mat[2][1] = ez[1];
+  mat[2][2] = ez[2];
+  mat[2][3] = 0.0f;
+
+  mat[3][0] = 0.0f;
+  mat[3][1] = 0.0f;
+  mat[3][2] = 0.0f;
+  mat[3][3] = 1.0f;
+}
+
 inline bool ShadowRay(const Scene& scene, const float3& pos, const float3& dir,
                       const float dist) {
   Ray ray;
