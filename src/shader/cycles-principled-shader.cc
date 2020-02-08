@@ -30,8 +30,8 @@ static auto FetchClosureSampleWeight(const CyclesPrincipledBsdf& bsdf) {
 static auto EvalBSDF(const float3& omega_in, const float3& omega_out,
                      const CyclesPrincipledBsdf& bsdf) {
   struct {
-    float3 bsdf_f;
-    float pdf;
+    float3 bsdf_f = float3(0.f);
+    float pdf     = 0.0f;
   } ret;
 
   const auto w = FetchClosureSampleWeight(bsdf);
@@ -117,10 +117,10 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
 
         const auto ret = EvalBSDF(omega_l, omega_out, bsdf);
 
-        *contribute =
-            *contribute + ret.bsdf_f * result_light_sample.emission *
-                              (wl_dot_nl * wl_dot_np /
-                               (dist * dist * result_light_sample.pdf));
+        (*contribute) =
+            (*contribute) + ret.bsdf_f * result_light_sample.emission *
+                                (wl_dot_nl * wl_dot_np /
+                                 (dist * dist * result_light_sample.pdf));
       }
     }
   }
