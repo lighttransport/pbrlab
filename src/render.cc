@@ -23,24 +23,34 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
   Ray ray = input_ray;
   float3 contribution(0.0f);
   float3 throuput(1.0f);
+  float bsdf_sampling_pdf = 0.f;
+  float prev_cos          = 0.f;
 
   for (uint32_t depth = 0;; depth++) {
     const TraceResult trace_result = scene.TraceFirstHit1(ray);
 
     if (trace_result.instance_id == static_cast<uint32_t>(-1)) {
-      contribution = contribution + float3(0.0f) * throuput;
+      // TODO
       break;
     }
 
     const SurfaceInfo surface_info =
         TraceResultToSufaceInfo(ray, scene, trace_result);
 
-    if (depth == 0) {
+    {
       if (surface_info.face_direction == SurfaceInfo::kFront) {
         const auto ret =
             scene.ImplicitAreaLight(trace_result.instance_id,
                                     trace_result.geom_id, trace_result.prim_id);
-        contribution = contribution + ret.emission * throuput;
+        const float inv_g =
+            abs((trace_result.t * trace_result.t) /
+                (prev_cos * vdot(surface_info.normal_s, ray.ray_dir)));
+
+        const float weight =
+            (depth == 0)
+                ? 1.0f
+                : PowerHeuristicWeight(bsdf_sampling_pdf, ret.pdf * inv_g);
+        contribution = contribution + weight * ret.emission * throuput;
       }
     }
 
@@ -55,12 +65,14 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
     float3 next_ray_dir;
     float3 r_throuput;
     float3 d_contribute;
-    float pdf;
+    float _bsdf_sampling_pdf;
     Shader(scene, -ray.ray_dir, surface_info, rng, &next_ray_org, &next_ray_dir,
-           &r_throuput, &d_contribute, &pdf);
+           &r_throuput, &d_contribute, &_bsdf_sampling_pdf);
 
-    contribution = contribution + throuput * d_contribute;
-    throuput     = r_throuput * throuput;
+    contribution      = contribution + throuput * d_contribute;
+    throuput          = r_throuput * throuput;
+    bsdf_sampling_pdf = _bsdf_sampling_pdf;
+    prev_cos          = vdot(next_ray_dir, surface_info.normal_s);
 
     ray.ray_org = next_ray_org;
     ray.ray_dir = next_ray_dir;

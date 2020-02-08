@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
   const size_t width   = 512;
   const size_t height  = 512;
-  const size_t samples = 128;
+  const size_t samples = 32;
 
   pbrlab::RenderLayer layer;
   pbrlab::Render(scene, width, height, samples, &layer);

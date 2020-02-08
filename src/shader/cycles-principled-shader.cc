@@ -8,6 +8,7 @@
 #include "material-param.h"
 #include "matrix.h"
 #include "random/rng.h"
+#include "sampler/sampling-utils.h"
 #include "shader-utils.h"
 #include "type.h"
 
@@ -110,6 +111,10 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
       const float wl_dot_nl = -vdot(dir_to_light, light_normal);
       const float wl_dot_np = vdot(dir_to_light, ez);
 
+      // To solid angle measure
+      const float pdf_sigma =
+          result_light_sample.pdf * dist * dist / (wl_dot_nl * wl_dot_np);
+
       if (wl_dot_nl > 0.0f && wl_dot_np > 0.0f &&
           !ShadowRay(scene, pos, dir_to_light, dist)) {
         float3 omega_l;
@@ -117,10 +122,12 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
 
         const auto ret = EvalBSDF(omega_l, omega_out, bsdf);
 
-        (*contribute) =
-            (*contribute) + ret.bsdf_f * result_light_sample.emission *
-                                (wl_dot_nl * wl_dot_np /
-                                 (dist * dist * result_light_sample.pdf));
+        const float weight =
+            PowerHeuristicWeight(pdf_sigma /*light*/, ret.pdf /*bsdf*/);
+
+        (*contribute) = (*contribute) + ret.bsdf_f *
+                                            result_light_sample.emission *
+                                            weight / (pdf_sigma);
       }
     }
   }
@@ -139,7 +146,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
 
   *next_ray_org = surface_info.global_position;
   *throuput     = float3(ret.brdf_f * cos_i / ret.pdf) * bsdf.diffuse_weight;
-  *pdf          = ret.pdf;
+  *pdf          = ret.pdf;  // pdf of bsdf sampling
 }
 
 }  // namespace pbrlab
