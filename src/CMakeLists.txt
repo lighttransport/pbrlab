@@ -3,6 +3,7 @@ set(PBRLAB_SOURCES
     light-manager.cc
     matrix.cc
     render.cc
+    render-layer.cc
     scene.cc
     io/image-io.cc
     io/stb_image.cc
@@ -50,8 +51,8 @@ target_include_directories(${BUILD_TARGET} SYSTEM PRIVATE
                            ${PROJECT_SOURCE_DIR}/third_party/rapidjson/include
                            ${PROJECT_SOURCE_DIR}/third_party/toml11)
 
-target_link_libraries(${BUILD_TARGET} PRIVATE
-                      ${PBRLAB_EXT_LIBRARIES} glfw ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
+target_link_libraries(${BUILD_TARGET} PUBLIC
+                      ${PBRLAB_EXT_LIBRARIES})
 
 set_target_properties(${BUILD_TARGET} PROPERTIES
   OUTPUT_NAME ${BUILD_TARGET}

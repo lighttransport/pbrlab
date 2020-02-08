@@ -57,6 +57,8 @@ const std::vector<uint32_t>& TriangleMesh::GetMaterials(void) const {
   return material_ids_;
 }
 
+std::string TriangleMesh::GetName(void) const { return name_; }
+
 float3 TriangleMesh::FetchGeometryNormal(const uint32_t prim_id) const {
   assert(prim_id < num_faces_);
 #ifdef NDEBUG

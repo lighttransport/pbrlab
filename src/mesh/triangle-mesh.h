@@ -36,6 +36,7 @@ public:
   const std::vector<uint32_t>& GetMaterials(void) const;
   uint32_t GetNumFaces(void) const;
   uint32_t GetNumVertices(void) const;
+  std::string GetName(void) const;
   const std::vector<uint32_t>& GetVertexIds(void) const;
   const std::vector<float>& GetVertices(void) const;
 
