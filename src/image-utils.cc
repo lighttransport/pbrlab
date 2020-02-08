@@ -46,7 +46,7 @@ void SrgbToLiner(const std::vector<T>& src, const size_t width,
                  std::vector<T>* out) {
   assert(src.size() == width * height * channels);
 
-  out->resize(src.size() == width * height * channels);
+  out->resize(width * height * channels);
   for (size_t i = 0; i < height; ++i) {
     for (size_t j = 0; j < width; ++j) {
       for (size_t k = 0; k < channels; ++k) {
@@ -74,7 +74,7 @@ void LinerToSrgb(const std::vector<T>& src, const size_t width,
                  std::vector<T>* out) {
   assert(src.size() == width * height * channels);
 
-  out->resize(src.size() == width * height * channels);
+  out->resize(width * height * channels);
   for (size_t i = 0; i < height; ++i) {
     for (size_t j = 0; j < width; ++j) {
       for (size_t k = 0; k < channels; ++k) {

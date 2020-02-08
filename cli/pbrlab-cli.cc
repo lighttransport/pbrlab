@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 
+#include "image-utils.h"
 #include "io/image-io.h"
 #include "io/triangle-mesh-io.h"
 #include "render.h"
@@ -78,7 +79,7 @@ int main(int argc, char** argv) {
 
   const size_t width   = 512;
   const size_t height  = 512;
-  const size_t samples = 32;
+  const size_t samples = 128;
 
   pbrlab::RenderLayer layer;
   pbrlab::Render(scene, width, height, samples, &layer);
@@ -92,6 +93,7 @@ int main(int argc, char** argv) {
     color[i * 4 + 3] = layer.rgba[i * 4 + 3] / layer.count[i];
   }
 
+  pbrlab::LinerToSrgb(color, width, height, 4, &color);
   pbrlab::io::WritePNG("rgba.png", "./", color, width, height, 4);
 
   return EXIT_SUCCESS;
