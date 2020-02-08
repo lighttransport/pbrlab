@@ -35,7 +35,7 @@ public:
 
   void AttachLightParamIdsToInstance(
       const uint32_t instance_id,
-      std::vector<std::vector<uint32_t>> light_param_ids);
+      const std::vector<std::vector<uint32_t>>& light_param_ids);
 
   void CommitScene(void);
 

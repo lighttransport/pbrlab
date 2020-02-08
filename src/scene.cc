@@ -13,7 +13,7 @@ Scene::~Scene(void) = default;
 
 void Scene::AttachLightParamIdsToInstance(
     const uint32_t instance_id,
-    std::vector<std::vector<uint32_t>> light_param_ids) {
+    const std::vector<std::vector<uint32_t>>& light_param_ids) {
   MeshInstance& instance = instances_.at(instance_id);
   if (instance.light_param_ids.size() != light_param_ids.size())
     throw std::runtime_error("light param error");
