@@ -57,9 +57,9 @@ uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
                                 {0.0f, 0.0f, 1.0f, 0.0f},
                                 {0.0f, 0.0f, 0.0f, 1.0f}};
 
-  Matrix::Copy(tranform, instance.transform_gl);  // [NOTE] local to global
-  Matrix::Copy(tranform, instance.transform_lg);
-  Matrix::Inverse(instance.transform_lg);  // [NOTE] global to local
+  Matrix::Copy(tranform, instance.transform_lg);  // [NOTE] local to global
+  Matrix::Copy(tranform, instance.transform_gl);
+  Matrix::Inverse(instance.transform_gl);  // [NOTE] global to local
 
   uint32_t instance_id, local_scene_id, local_geom_id;
   raytracer_.RegisterNewTriangleMesh(

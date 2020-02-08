@@ -29,8 +29,11 @@ struct MeshInstance {
                         // 0, the mesh whose local geom
                         // id is i don't have emission
 
-  float transform_gl[4][4];  // [NOTE] local to global
-  float transform_lg[4][4];  // [NOTE] global to local
+  float transform_lg[4][4];  // [NOTE] local to global
+  float transform_gl[4][4];  // [NOTE] global to local
+  // sR 0
+  //  t 1
+  //  v' = v * M
 };
 
 }  // namespace pbrlab

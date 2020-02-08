@@ -13,6 +13,8 @@ set(PBRLAB_SOURCES
     mesh/triangle-mesh.cc
     raytracer/raytracer.cc
     raytracer/raytracer_impl.cc
+    shader/cycles-principled-shader.cc
+    shader/shader.cc
    )
 
 add_library(${BUILD_TARGET} SHARED
