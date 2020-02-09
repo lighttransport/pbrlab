@@ -10,6 +10,8 @@ constexpr const float kPiInv = 0.318309886183f;
 constexpr const float kEps = 1e-3f;      // TODO
 constexpr const float kInf = 1.844E18f;  // for embree
 
+inline float SafeSqrtf(float f) { return std::sqrt(std::max(f, 0.0f)); }
+
 // TODO better way
 inline float3 vcross(const float3& a, const float3& b) {
   return nanort::vcross(a, b);
