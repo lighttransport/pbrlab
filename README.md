@@ -38,6 +38,9 @@ $ make
 
 pbrlab is licensed under MIT license.
 
+The following files are derived from these;
+* src/closure/microface-ggx.h: Open Shading Language (3-clause BSD license)
+
 ### Third party license
 
 * TinyObjLoader : MIT license.

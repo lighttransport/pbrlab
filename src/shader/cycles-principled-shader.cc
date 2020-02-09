@@ -5,6 +5,7 @@
 #include <array>
 
 #include "closure/lambert.h"
+#include "closure/microfacet-ggx.h"
 #include "material-param.h"
 #include "matrix.h"
 #include "random/rng.h"
@@ -28,7 +29,7 @@ static auto FetchClosureSampleWeight(const CyclesPrincipledBsdf& bsdf) {
   return ret;
 }
 
-static auto EvalBSDF(const float3& omega_in, const float3& omega_out,
+static auto EvalBsdf(const float3& omega_in, const float3& omega_out,
                      const CyclesPrincipledBsdf& bsdf) {
   struct {
     float3 bsdf_f = float3(0.f);
@@ -42,6 +43,32 @@ static auto EvalBSDF(const float3& omega_in, const float3& omega_out,
     ret.bsdf_f += bsdf.diffuse_weight * _ret.brdf_f;
     ret.pdf += w.diffuse_sample_weight * _ret.pdf;
   }
+
+  return ret;
+}
+
+static auto SampleBsdf(const float3& omega_out,
+                       const CyclesPrincipledBsdf& bsdf, const RNG& rng) {
+  struct {
+    float3 omega_in = float3(0.f, 0.f, 1.f);
+    float3 bsdf_f   = float3(0.f);
+    float pdf       = 0.0f;
+  } ret;
+
+  const auto w = FetchClosureSampleWeight(bsdf);
+
+  float select_closure = rng.Draw();
+
+  // Sample Bsdf
+  if (select_closure < w.diffuse_sample_weight) {
+    const std::array<float, 2> u_lambert = {rng.Draw(), rng.Draw()};
+    const auto tmp = LambertBrdfSample(omega_out, u_lambert);
+    ret.omega_in   = tmp.omega_in;
+  }
+
+  const auto tmp = EvalBsdf(ret.omega_in, omega_out, bsdf);
+  ret.bsdf_f     = tmp.bsdf_f;
+  ret.pdf        = tmp.pdf;
 
   return ret;
 }
@@ -120,7 +147,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
         float3 omega_l;
         Matrix::MultV(dir_to_light.v, Rgl, omega_l.v);
 
-        const auto ret = EvalBSDF(omega_l, omega_out, bsdf);
+        const auto ret = EvalBsdf(omega_l, omega_out, bsdf);
 
         const float weight =
             PowerHeuristicWeight(pdf_sigma /*light*/, ret.pdf /*bsdf*/);
@@ -133,8 +160,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   }
 
   // Sample Bsdf
-  const std::array<float, 2> u_lambert = {rng.Draw(), rng.Draw()};
-  const auto ret = LambertBrdfSample(omega_out, u_lambert);
+  const auto ret = SampleBsdf(omega_out, bsdf, rng);
 
   const auto cos_i = ret.omega_in[2];
 
@@ -145,7 +171,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   assert(std::abs(vdot(*next_ray_dir, ez) - ret.omega_in[2]) < kEps);
 
   *next_ray_org = surface_info.global_position;
-  *throuput     = float3(ret.brdf_f * cos_i / ret.pdf) * bsdf.diffuse_weight;
+  *throuput     = ret.bsdf_f * cos_i / ret.pdf;
   *pdf          = ret.pdf;  // pdf of bsdf sampling
 }
 
