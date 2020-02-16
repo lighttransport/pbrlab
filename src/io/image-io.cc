@@ -134,7 +134,8 @@ bool LoadImage(const std::string& filename, const std::string& asset_path,
     stbi_image_free(pixelf);
   }
 
-  return *width == 0 || *height == 0 || *channels == 0;
+  return *width != 0 && *height != 0 && *channels != 0 &&
+         pixels->size() == (*width) * (*height) * (*channels);
 }
 
 template bool LoadImage(const std::string& filename,
