@@ -30,7 +30,7 @@ namespace io {
 
 static float ParseTinyObjMaterialFloat(const std::string& param_name,
                                        const tinyobj::material_t& material) {
-  std::atof(material.unknown_parameter.find(param_name)->second.c_str());
+  return std::atof(material.unknown_parameter.find(param_name)->second.c_str());
 }
 
 static void ParseTinyObjMaterialFloat3(const std::string& param_name,
@@ -83,6 +83,9 @@ static MaterialParameter ParseTinyObjMaterial(
   ConvertTinyObjMaterialFloat3("base_color", material,
                                cycles_principled_bsdf_parameter.base_color.v);
 
+  ConvertTinyObjMaterialFloat("subsurface", material,
+                              &(cycles_principled_bsdf_parameter.subsurface));
+
   ConvertTinyObjMaterialFloat3(
       "subsurface_radius", material,
       cycles_principled_bsdf_parameter.subsurface_radius.v);
@@ -95,6 +98,10 @@ static MaterialParameter ParseTinyObjMaterial(
 
   ConvertTinyObjMaterialFloat("specular", material,
                               &(cycles_principled_bsdf_parameter.specular));
+
+  ConvertTinyObjMaterialFloat(
+      "specular_tint", material,
+      &(cycles_principled_bsdf_parameter.specular_tint));
 
   ConvertTinyObjMaterialFloat("roughness", material,
                               &(cycles_principled_bsdf_parameter.roughness));

@@ -61,6 +61,16 @@ inline float D_GTR2(const float3& h, const float alpha2) {
                    (alpha2 + tan_theta_m2));
 }
 
+template <typename T>
+inline T FrSchlick(const float3& omega_in, const float3 omega_out,
+                   const T& f0) {
+  const float cos_ = vdot(omega_in, omega_out);
+  const float tmp1 = 1.0f - cos_;
+  const float tmp2 = tmp1 * tmp1;
+  const float tmp4 = tmp2 * tmp2;
+  return f0 + (T(1.0f) - f0) * tmp1 * tmp4;
+}
+
 inline auto MicrofacetGgxSampleSlopes(const float cos_theta_i,
                                       const float sin_theta_i,
                                       const float randu, float randv) {
@@ -239,7 +249,7 @@ inline auto MicrofacetGGXBsdfPdf(const float3& omega_in,
     const float G = G1o * G1i;
 
     /* eq. 20 */
-    const float common = D * 0.25f / cos_n_o;
+    const float common = D * 0.25f / cos_n_o / cos_n_i;
 
     // TODO fresnel here ? outside?
     (void)ior;

@@ -27,6 +27,7 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
   float prev_cos          = 0.f;
 
   for (uint32_t depth = 0;; depth++) {
+    if (IsBlack(throuput)) break;
     const TraceResult trace_result = scene.TraceFirstHit1(ray);
 
     if (trace_result.instance_id == static_cast<uint32_t>(-1)) {

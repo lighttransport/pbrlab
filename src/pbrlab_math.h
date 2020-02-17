@@ -23,8 +23,13 @@ inline float vlength(const float3& v) { return nanort::vlength(v); }
 inline float3 vnormalized(const float3& v) { return nanort::vnormalize(v); }
 
 template <typename T>
-auto Lerp3(const T& v0, const T& v1, const T& v2, const float u,
-           const float v) {
+inline T Lerp(const T& v0, const T& v1, const float u) {
+  return (1.0f - u) * v0 + u * v1;
+}
+
+template <typename T>
+inline T Lerp3(const T& v0, const T& v1, const T& v2, const float u,
+               const float v) {
   return (1.0f - u - v) * v0 + u * v1 + v * v2;
 }
 }  // namespace pbrlab

@@ -22,12 +22,14 @@ enum MaterialParameterType { kCyclesPrincipledBsdfParameter = 0 };
 struct CyclesPrincipledBsdfParameter {
   float3 base_color        = {static_cast<float>(0.8), static_cast<float>(0.8),
                        static_cast<float>(0.8)};
+  float subsurface         = static_cast<float>(0.0);
   float3 subsurface_radius = {static_cast<float>(1.0), static_cast<float>(1.0),
                               static_cast<float>(1.0)};
   float3 subsurface_color  = {static_cast<float>(0.7), static_cast<float>(0.1),
                              static_cast<float>(0.1)};
   float metallic           = static_cast<float>(0.0);
   float specular           = static_cast<float>(0.5);
+  float specular_tint      = static_cast<float>(0.0);
   float roughness          = static_cast<float>(0.5);
   float anisotropic        = static_cast<float>(0.0);
   float anisotropic_rotation   = static_cast<float>(0.0);
