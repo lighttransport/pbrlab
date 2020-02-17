@@ -85,21 +85,23 @@ static void EvalBsdf(const float3& omega_in, const float3& omega_out,
   *pdf    = 0.0f;
 
   if (bsdf.enable_diffuse) {  // diffuse
-    const auto _ret = LambertBrdfPdf(omega_in, omega_out);
-    *bsdf_f += bsdf.diffuse_weight * _ret.brdf_f;
-    *pdf += w.diffuse_sample_weight * _ret.pdf;
+    float _pdf          = 0.f;
+    const float _brdf_f = LambertBrdfPdf(omega_in, omega_out, &_pdf);
+    *bsdf_f += bsdf.diffuse_weight * _brdf_f;
+    *pdf += w.diffuse_sample_weight * _pdf;
   }
 
   if (bsdf.enable_specular) {  // specular
-    const auto _ret =
-        MicrofacetGGXBsdfPdf(omega_in, omega_out, bsdf.alpha_x, bsdf.alpha_y);
+    float _pdf          = 0.f;
+    const float _brdf_f = MicrofacetGGXBsdfPdf(
+        omega_in, omega_out, bsdf.alpha_x, bsdf.alpha_y, /*distrib =*/2, &_pdf);
 
     // Calc fresnel
     *bsdf_f +=
         bsdf.specular_weight *
         SpecularColor(omega_in, omega_out, bsdf.specular_color, bsdf.ior) *
-        _ret.bsdf_f;
-    *pdf += w.specular_sample_weight * _ret.pdf;
+        _brdf_f;
+    *pdf += w.specular_sample_weight * _pdf;
   }
 }
 
@@ -113,13 +115,17 @@ static void SampleBsdf(const float3& omega_out,
   // Sample Bsdf
   if (select_closure < w.diffuse_sample_weight) {
     const std::array<float, 2> u_lambert = {rng.Draw(), rng.Draw()};
-    const auto tmp = LambertBrdfSample(omega_out, u_lambert);
-    *omega_in      = tmp.omega_in;
+    float _pdf                           = 0.f;  // TODO
+    const float _brdf_f =
+        LambertBrdfSample(omega_out, u_lambert, omega_in, &_pdf);
+    (void)_brdf_f;  // TODO
   } else {
     const std::array<float, 2> u_specular = {rng.Draw(), rng.Draw()};
-    const auto tmp =
-        MicrofacetGGXSample(omega_out, bsdf.alpha_x, bsdf.alpha_y, u_specular);
-    *omega_in = tmp.omega_in;
+    float _pdf                            = 0.f;  // TODO
+    const float _brdf_f                   = MicrofacetGGXSample(
+        omega_out, bsdf.alpha_x, bsdf.alpha_y, u_specular, /*refractive*/ false,
+        /*distrib*/ 2, omega_in, &_pdf);
+    (void)_brdf_f;  // TODO
   }
 
   EvalBsdf(*omega_in, omega_out, bsdf, bsdf_f, pdf);

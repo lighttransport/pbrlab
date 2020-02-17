@@ -43,13 +43,6 @@ public:
 
   const std::shared_ptr<LightManager> GetLightManager(void) const;
 
-  inline auto ImplicitAreaLight(const uint32_t instance_id,
-                                const uint32_t local_geom_id,
-                                const uint32_t prim_id) const {
-    return light_manager_->ImplicitAreaLight(instance_id, local_geom_id,
-                                             prim_id);
-  }
-
   inline LightParameter* FetchMeshLightParamPtr(
       const TraceResult& trace_result) const;
 

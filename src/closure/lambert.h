@@ -13,23 +13,17 @@ inline float LambertPdf(const float3& omega_in, const float3& omega_out) {
   return omega_in[2] * kPiInv;
 }
 
-inline auto LambertBrdfPdf(const float3& omega_in, const float3& omega_out) {
-  (void)omega_out;
-  struct {
-    float brdf_f, pdf;
-  } ret = {kPiInv, LambertPdf(omega_in, omega_out)};
-  return ret;
+inline float LambertBrdfPdf(const float3& omega_in, const float3& omega_out,
+                            float* pdf) {
+  *pdf = LambertPdf(omega_in, omega_out);
+  return kPiInv;
 }
 
-inline auto LambertBrdfSample(const float3& omega_out,
-                              const std::array<float, 2>& u) {
-  const float3 omega_in = CosineSampleHemisphere(u[0], u[1]);
-  const auto tmp        = LambertBrdfPdf(omega_in, omega_out);
-  struct {
-    float3 omega_in;
-    float brdf_f, pdf;
-  } ret = {omega_in, tmp.brdf_f, tmp.pdf};
-  return ret;
+inline float LambertBrdfSample(const float3& omega_out,
+                               const std::array<float, 2>& u, float3* omega_in,
+                               float* pdf) {
+  *omega_in = CosineSampleHemisphere(u[0], u[1]);
+  return LambertBrdfPdf(*omega_in, omega_out, pdf);
 }
 
 }  // namespace pbrlab

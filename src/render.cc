@@ -40,18 +40,24 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
 
     {
       if (surface_info.face_direction == SurfaceInfo::kFront) {
-        const auto ret =
-            scene.ImplicitAreaLight(trace_result.instance_id,
-                                    trace_result.geom_id, trace_result.prim_id);
-        const float inv_g =
-            abs((trace_result.t * trace_result.t) /
-                (prev_cos * vdot(surface_info.normal_s, ray.ray_dir)));
+        float3 emission(0.f);
+        float pdf_area = 0.f;
+        const std::shared_ptr<LightManager> light_manager =
+            scene.GetLightManager();
+        const bool has_emission = light_manager->ImplicitAreaLight(
+            trace_result.instance_id, trace_result.geom_id,
+            trace_result.prim_id, &emission, &pdf_area);
+        if (has_emission) {
+          const float inv_g =
+              abs((trace_result.t * trace_result.t) /
+                  (prev_cos * vdot(surface_info.normal_s, ray.ray_dir)));
 
-        const float weight =
-            (depth == 0)
-                ? 1.0f
-                : PowerHeuristicWeight(bsdf_sampling_pdf, ret.pdf * inv_g);
-        contribution = contribution + weight * ret.emission * throuput;
+          const float weight =
+              (depth == 0)
+                  ? 1.0f
+                  : PowerHeuristicWeight(bsdf_sampling_pdf, pdf_area * inv_g);
+          contribution = contribution + weight * emission * throuput;
+        }
       }
     }
 

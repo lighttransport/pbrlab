@@ -91,6 +91,7 @@ if (PBRLAB_WITH_EMBREE)
     set(EMBREE_ADDRESS_SANITIZER On CACHE INTERNAL "" FORCE)
     message(STATUS "Enable ASAN for Embree3")
   endif ()
+  set(EMBREE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/third_party/embree-aarch64/include)
   
   add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/embree-aarch64)
   list(APPEND PBRLAB_EXT_LIBRARIES embree)

@@ -62,24 +62,22 @@ inline float D_GTR2(const float3& h, const float alpha2) {
                    (alpha2 + tan_theta_m2));
 }
 
-inline auto MicrofacetGgxSampleSlopes(const float cos_theta_i,
+inline void MicrofacetGgxSampleSlopes(const float cos_theta_i,
                                       const float sin_theta_i,
-                                      const float randu, float randv) {
-  struct {
-    float slope_x = 0.f, slope_y = 0.f, G1i = 0.f;
-  } ret;
-
+                                      const float randu, float randv,
+                                      float* slope_x, float* slope_y,
+                                      float* G1i) {
   const float k2PI = 2.0f * kPi;
 
   /* special case (normal incidence) */
   if (cos_theta_i >= 0.99999f) {
     const float r   = sqrtf(randu / (1.0f - randu));
     const float phi = k2PI * randv;
-    ret.slope_x     = r * cosf(phi);
-    ret.slope_y     = r * sinf(phi);
-    ret.G1i         = 1.0f;
+    *slope_x        = r * cosf(phi);
+    *slope_y        = r * sinf(phi);
+    *G1i            = 1.0f;
 
-    return ret;
+    return;
   }
 
   /* precomputations */
@@ -87,7 +85,7 @@ inline auto MicrofacetGgxSampleSlopes(const float cos_theta_i,
   const float G1_inv =
       0.5f * (1.0f + SafeSqrtf(1.0f + tan_theta_i * tan_theta_i));
 
-  ret.G1i = 1.0f / G1_inv;
+  *G1i = 1.0f / G1_inv;
 
   /* sample slope_x */
   const float A         = 2.0f * randu * G1_inv - 1.0f;
@@ -98,7 +96,7 @@ inline auto MicrofacetGgxSampleSlopes(const float cos_theta_i,
   const float D         = SafeSqrtf(BB * (tmp * tmp) - (AA - BB) * tmp);
   const float slope_x_1 = B * tmp - D;
   const float slope_x_2 = B * tmp + D;
-  ret.slope_x =
+  *slope_x =
       (A < 0.0f || slope_x_2 * tan_theta_i > 1.0f) ? slope_x_1 : slope_x_2;
 
   /* sample slope_y */
@@ -116,17 +114,14 @@ inline auto MicrofacetGgxSampleSlopes(const float cos_theta_i,
       (randv * (randv * (randv * 0.27385f - 0.73369f) + 0.46341f)) /
       (randv * (randv * (randv * 0.093073f + 0.309420f) - 1.000000f) +
        0.597999f);
-  ret.slope_y = S * z * SafeSqrtf(1.0f + (ret.slope_x) * (ret.slope_x));
-  return ret;
+  *slope_y = S * z * SafeSqrtf(1.0f + (*slope_x) * (*slope_x));
 }
 
-inline auto MicrofacetSampleStretched(const float3 omega_i, const float alpha_x,
-                                      const float alpha_y, const float randu,
-                                      const float randv) {
-  struct {
-    float3 h;
-    float G1i;
-  } ret;
+/* return half vector*/
+inline float3 MicrofacetSampleStretched(const float3 omega_i,
+                                        const float alpha_x,
+                                        const float alpha_y, const float randu,
+                                        const float randv, float* G1i) {
   /* 1. stretch omega_i */
   const float3 omega_i_ = vnormalized(
       float3(alpha_x * omega_i[0], alpha_y * omega_i[1], omega_i[2]));
@@ -149,39 +144,33 @@ inline auto MicrofacetSampleStretched(const float3 omega_i, const float alpha_x,
   /* 2. sample P22_{omega_i}(x_slope, y_slope, 1, 1) */
 
   // TODO beckmann
-  auto r = MicrofacetGgxSampleSlopes(costheta_, sintheta_, randu, randv);
-
-  ret.G1i = r.G1i;
+  float slope_x = 0.f, slope_y = 0.f;
+  MicrofacetGgxSampleSlopes(costheta_, sintheta_, randu, randv, &slope_x,
+                            &slope_y, G1i);
 
   /* 3. rotate */
-  float tmp = cosphi_ * r.slope_x - sinphi_ * r.slope_y;
-  r.slope_y = sinphi_ * r.slope_x + cosphi_ * r.slope_y;
-  r.slope_x = tmp;
+  float tmp = cosphi_ * slope_x - sinphi_ * slope_y;
+  slope_y   = sinphi_ * slope_x + cosphi_ * slope_y;
+  slope_x   = tmp;
 
   /* 4. unstretch */
-  r.slope_x = alpha_x * r.slope_x;
-  r.slope_y = alpha_y * r.slope_y;
+  slope_x = alpha_x * slope_x;
+  slope_y = alpha_y * slope_y;
 
   /* 5. compute normal */
-  ret.h = vnormalize(float3(-r.slope_x, -r.slope_y, 1.0f));
-  return ret;
+  return vnormalize(float3(-slope_x, -slope_y, 1.0f));
 }
 
-inline auto MicrofacetGGXBsdfPdf(const float3& omega_in,
-                                 const float3& omega_out, const float alpha_x,
-                                 const float alpha_y,
-                                 const int distrib = 2 /*TODO*/) {
-  struct {
-    float3 bsdf_f = float3(0.f);
-    float pdf     = 0.f;
-  } ret;
-
+inline float MicrofacetGGXBsdfPdf(const float3& omega_in,
+                                  const float3& omega_out, const float alpha_x,
+                                  const float alpha_y, const int distrib,
+                                  float* pdf) {
   // n is ez
 
   const float cos_n_o = omega_out[2];  // n dot omega_out
   const float cos_n_i = omega_in[2];   // n dot omega_in
 
-  if (cos_n_o > 0 && cos_n_i > 0) {  // refraction
+  if (cos_n_o > 0 && cos_n_i > 0) {  // reflection
     /* half vector*/                 // TODO rename
     const float3 m     = vnormalized(omega_in + omega_out);
     const float alpha2 = alpha_x * alpha_y;
@@ -242,38 +231,33 @@ inline auto MicrofacetGGXBsdfPdf(const float3& omega_in,
     /* eq. 20 */
     const float common = D * 0.25f / cos_n_o / cos_n_i;
 
-    ret.bsdf_f = G * common;
-    if (distrib == 1) ret.bsdf_f = 0.25f * ret.bsdf_f;
+    float bsdf_f = G * common;
+    if (distrib == 1) bsdf_f = 0.25f * bsdf_f;
 
-    ret.pdf = G1o * common;
+    *pdf = G1o * common;
 
-    return ret;
+    return bsdf_f;
   }
   // TODO transmittion
-  return ret;
+  *pdf = 0.f;
+  return 0.f;
 }
 
-inline auto MicrofacetGGXSample(const float3& omega_out, const float alpha_x,
-                                const float alpha_y,
-                                const std::array<float, 2>& u,
-                                const bool refractive = false,
-                                const int distrib     = 2 /*TODO*/) {
-  struct {
-    float3 omega_in = float3(0.f, 0.f, 1.f);
-    float3 bsdf_f   = float3(0.f);
-    float pdf       = 0.f;
-  } ret;
-
+inline float MicrofacetGGXSample(const float3& omega_out, const float alpha_x,
+                                 const float alpha_y,
+                                 const std::array<float, 2>& u,
+                                 const bool refractive, const int distrib,
+                                 float3* omega_in, float* pdf) {
   const float cos_n_o = omega_out[2];  // n dot omega_out
+
+  float ret_bsdf_f = 0.f;
 
   // It is possible to sample only when cos_n_o > 0
   if (cos_n_o > 0.f) {
     // tanget -> ex
-    const auto tmp =
-        MicrofacetSampleStretched(omega_out, alpha_x, alpha_y, u[0], u[1]);
-
-    const float3 m  = tmp.h;
-    const float G1o = tmp.G1i;
+    float G1o      = 0.f;
+    const float3 m = MicrofacetSampleStretched(omega_out, alpha_x, alpha_y,
+                                               u[0], u[1], &G1o);
 
     bool tir_flag = false;
     if (refractive) {
@@ -283,13 +267,11 @@ inline auto MicrofacetGGXSample(const float3& omega_out, const float alpha_x,
       const float& cos_m_o = vdot(m, omega_out);
       if (cos_m_o > 0) {
         /* eq. 39 - compute actual reflected direction */
-        ret.omega_in = 2 * cos_m_o * m - omega_out;
+        *omega_in = 2 * cos_m_o * m - omega_out;
         // TODO calculation without G1o. The performance improve?
         (void)G1o;
-        const auto tmp_ = MicrofacetGGXBsdfPdf(ret.omega_in, omega_out, alpha_x,
-                                               alpha_y, distrib);
-        ret.bsdf_f      = tmp_.bsdf_f;
-        ret.pdf         = tmp_.pdf;
+        ret_bsdf_f = MicrofacetGGXBsdfPdf(*omega_in, omega_out, alpha_x,
+                                          alpha_y, distrib, pdf);
       } else {
         // error
         // TODO
@@ -299,7 +281,7 @@ inline auto MicrofacetGGXSample(const float3& omega_out, const float alpha_x,
     assert(false);
   }
 
-  return ret;
+  return ret_bsdf_f;
 }
 }  // namespace pbrlab
 

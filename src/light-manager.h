@@ -15,6 +15,12 @@ namespace pbrlab {
 
 class LightManager {
 public:
+  struct SampledLight {
+    LightType light_type;
+    float3 v1, v2, emission;
+    float pdf;
+  };
+
   LightManager();
 
   template <class... Args>
@@ -28,9 +34,10 @@ public:
   void Clear(void);
   void Commit(void);
 
-  inline auto ImplicitAreaLight(const uint32_t instance_id,
+  inline bool ImplicitAreaLight(const uint32_t instance_id,
                                 const uint32_t local_geom_id,
-                                const uint32_t prim_id) const {
+                                const uint32_t prim_id, float3* emission,
+                                float* pdf) const {
 #ifdef NDEBUG
     const std::unique_ptr<AreaLight>& area_light =
         area_lights_[instance_id][local_geom_id];
@@ -39,16 +46,9 @@ public:
         area_lights_.at(instance_id).at(local_geom_id);
 #endif
 
-    struct {
-      float3 emission;
-      float pdf;
-    } ret;
-
     if (!area_light ||
         area_light->light_param_ids[prim_id] == static_cast<uint32_t>(-1)) {
-      ret.emission = float3(0.f);
-      ret.pdf      = 0.0f;
-      return ret;
+      return false;
     }
 
 #ifdef NDEBUG
@@ -60,29 +60,24 @@ public:
 #endif
 
 #ifdef NDEBUG
-    ret.emission = area_light_param.emission;
-    ret.pdf      = lights_[area_light->global_id].choose_light_probability *
-              area_light->choose_primitive_probability[prim_id] *
-              area_light->prim_area_measure_pdf[prim_id];
-    return ret;
+    *emission = area_light_param.emission;
+    *pdf      = lights_[area_light->global_id].choose_light_probability *
+           area_light->choose_primitive_probability[prim_id] *
+           area_light->prim_area_measure_pdf[prim_id];
 #else
-    ret.emission = area_light_param.emission;
-    ret.pdf      = lights_.at(area_light->global_id).choose_light_probability *
-              area_light->choose_primitive_probability.at(prim_id) *
-              area_light->prim_area_measure_pdf.at(prim_id);
-    return ret;
+    *emission = area_light_param.emission;
+    *pdf      = lights_.at(area_light->global_id).choose_light_probability *
+           area_light->choose_primitive_probability.at(prim_id) *
+           area_light->prim_area_measure_pdf.at(prim_id);
 #endif
+    return true;
   }
 
   void RegisterInstanceMesh(const MeshInstance& instance,
                             const uint32_t instance_id);
 
-  auto SampleAllLight(const RNG& rng) const {
-    struct {
-      LightType light_type;
-      float3 v1, v2, emission;
-      float pdf;
-    } ret;
+  SampledLight SampleAllLight(const RNG& rng) const {
+    SampledLight ret;
 
     if (cumulative_probability_.empty()) {
       // there are no lights.

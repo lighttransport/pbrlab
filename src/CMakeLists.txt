@@ -45,11 +45,12 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 
 target_include_directories(${BUILD_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
-# [StaticJson,rapidjson,toml11]
+# [StaticJson,rapidjson,toml11,embree]
 target_include_directories(${BUILD_TARGET} SYSTEM PRIVATE 
                            ${PROJECT_SOURCE_DIR}/third_party/StaticJSON/include
                            ${PROJECT_SOURCE_DIR}/third_party/rapidjson/include
-                           ${PROJECT_SOURCE_DIR}/third_party/toml11)
+                           ${PROJECT_SOURCE_DIR}/third_party/toml11
+                           ${EMBREE_INCLUDE_DIRS})
 
 target_link_libraries(${BUILD_TARGET} PUBLIC
                       ${PBRLAB_EXT_LIBRARIES})
