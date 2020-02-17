@@ -309,7 +309,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   *contribute = float3(0.f);
   // TODO : function
   {
-    const std::shared_ptr<LightManager> light_manager = scene.GetLightManager();
+    const LightManager* light_manager = scene.GetLightManager();
 
     const auto result_light_sample = light_manager->SampleAllLight(rng);
     if (result_light_sample.light_type == kAreaLight) {

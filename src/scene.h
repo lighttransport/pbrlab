@@ -41,7 +41,7 @@ public:
 
   uint32_t CreateInstance(const MeshPtr& mesh_ptr);
 
-  const std::shared_ptr<LightManager> GetLightManager(void) const;
+  const LightManager* GetLightManager(void) const;
 
   inline LightParameter* FetchMeshLightParamPtr(
       const TraceResult& trace_result) const;
@@ -67,6 +67,8 @@ private:
   raytracer::Raytracer raytracer_;
 
   std::shared_ptr<LightManager> light_manager_;
+
+  float bmax_[3], bmin_[3];
 };
 }  // namespace pbrlab
 #endif  // PBRLAB_SCENE_H_

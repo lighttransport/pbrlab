@@ -9,7 +9,6 @@
 namespace pbrlab {
 
 struct RenderLayer {
-public:
   explicit RenderLayer();
   explicit RenderLayer(const size_t w, const size_t h);
   ~RenderLayer();
@@ -23,7 +22,7 @@ public:
   std::vector<float> rgba;
   std::vector<uint32_t> count;
 
-  std::mutex mtx_layer;
+  std::mutex mtx;
 };
 
 };  // namespace pbrlab

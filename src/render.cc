@@ -1,12 +1,17 @@
 #include "render.h"
 
+#include <atomic>
 #include <iostream>
+#include <memory>
+#include <mutex>
+#include <thread>
 #include <tuple>
 #include <vector>
 
 #include "light-manager.h"
 #include "pbrlab-util.h"
 #include "random/rng.h"
+#include "render-tile.h"
 #include "scene.h"
 #include "shader/shader-utils.h"
 #include "shader/shader.h"
@@ -41,10 +46,9 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
     {
       if (surface_info.face_direction == SurfaceInfo::kFront) {
         float3 emission(0.f);
-        float pdf_area = 0.f;
-        const std::shared_ptr<LightManager> light_manager =
-            scene.GetLightManager();
-        const bool has_emission = light_manager->ImplicitAreaLight(
+        float pdf_area                    = 0.f;
+        const LightManager* light_manager = scene.GetLightManager();
+        const bool has_emission           = light_manager->ImplicitAreaLight(
             trace_result.instance_id, trace_result.geom_id,
             trace_result.prim_id, &emission, &pdf_area);
         if (has_emission) {
@@ -90,8 +94,46 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
   return contribution;
 }
 
-bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
-            const uint32_t num_sample, RenderLayer* layer) {
+static bool PrepareRendering(
+    const Scene& scene, const uint32_t width, const uint32_t height,
+    const uint32_t num_sample, RenderLayer* layer,
+    std::vector<std::unique_ptr<RenderTile>>* render_tiles,
+    std::vector<std::unique_ptr<std::atomic<uint32_t>>>*
+        finished_jobs_counters) {
+  // clear layer
+  layer->Resize(width, height);
+  layer->Clear();
+
+  // TODO scene commit if it's nesessary
+  (void)scene;
+
+  // prepare render tile
+  {
+    const uint32_t kTileWidth  = 64;
+    const uint32_t kTileHeight = 64;
+
+    CreateTiles(uint32_t(layer->width), uint32_t(layer->height), kTileWidth,
+                kTileHeight, render_tiles);
+  }
+
+  // prepare finish jobs counter
+  {
+    finished_jobs_counters->clear();
+    finished_jobs_counters->reserve(num_sample);
+    for (size_t i = 0; i < num_sample; ++i) {
+      finished_jobs_counters->emplace_back(new std::atomic<uint32_t>(0));
+    }
+    return true;
+  }
+}
+
+static uint32_t RenderingTile(const Scene& scene, const uint32_t num_sample,
+                              const RenderTile& render_tile, const RNG& rng,
+                              RenderLayer* layer,
+                              std::atomic<uint32_t>* finished_jobs_counter) {
+  assert(render_tile.sx < render_tile.tx && render_tile.tx <= layer->width);
+  assert(render_tile.sy < render_tile.ty && render_tile.ty <= layer->height);
+
   float bmax[3], bmin[3];
   scene.FetchSceneAABB(bmin, bmax);
 
@@ -105,18 +147,14 @@ bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
   const float x_corner = (bmax[0] + bmin[0]) * 0.5f - screen_size * 0.5f;
   const float y_corner = (bmax[1] + bmin[1]) * 0.5f + screen_size * 0.5f;
   const float z_corner = bmax[2];
-  const float dx       = screen_size / width;
-  const float dy       = screen_size / height;
+  const float dx       = screen_size / layer->width;
+  const float dy       = screen_size / layer->height;
 
-  layer->Resize(width, height);
-  layer->Clear();
-
-  RNG rng(12345, 67890);  // TODO
-  for (uint32_t sample = 0; sample < num_sample; sample++) {
-    std::cerr << "sample " << sample + 1 << std::endl;
-    for (uint32_t y = 0; y < height; y++) {
-      for (uint32_t x = 0; x < width; x++) {
-        float target[3]  = {x_corner + dx * x, y_corner - dy * y, z_corner};
+  for (uint32_t sample = 0; sample < num_sample; ++sample) {
+    for (uint32_t y = render_tile.sy; y < render_tile.ty; y++) {
+      for (uint32_t x = render_tile.sx; x < render_tile.tx; x++) {
+        float target[3]  = {x_corner + dx * (x + rng.Draw()),
+                           y_corner - dy * (y + rng.Draw()), z_corner};
         float ray_dir[3] = {target[0] - ray_org[0], target[1] - ray_org[1],
                             target[2] - ray_org[2]};
         Normalize(ray_dir);
@@ -126,14 +164,68 @@ bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
         ray.ray_org = float3(ray_org);
 
         const float3 radiance = GetRadiance(ray, scene, rng);
-        layer->rgba[(y * width + x) * 4 + 0] += radiance[0];
-        layer->rgba[(y * width + x) * 4 + 1] += radiance[1];
-        layer->rgba[(y * width + x) * 4 + 2] += radiance[2];
-        layer->rgba[(y * width + x) * 4 + 3] += 1.0f;
 
-        layer->count[y * width + x]++;
+        {
+          std::lock_guard<std::mutex> lock_tile(render_tile.mtx);
+          layer->rgba[(y * layer->width + x) * 4 + 0] += radiance[0];
+          layer->rgba[(y * layer->width + x) * 4 + 1] += radiance[1];
+          layer->rgba[(y * layer->width + x) * 4 + 2] += radiance[2];
+          layer->rgba[(y * layer->width + x) * 4 + 3] += 1.0f;
+
+          layer->count[y * layer->width + x]++;
+        }
       }
     }
+  }
+
+  (*finished_jobs_counter)++;
+  return finished_jobs_counter->load();
+}
+
+bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
+            const uint32_t num_sample, RenderLayer* layer) {
+  std::vector<std::unique_ptr<RenderTile>> render_tiles;
+  std::vector<std::unique_ptr<std::atomic<uint32_t>>> finished_jobs_counters;
+  PrepareRendering(scene, width, height, num_sample, layer, &render_tiles,
+                   &finished_jobs_counters);
+
+  const size_t num_tiles = render_tiles.size();
+
+  const uint32_t num_threads =
+      std::max(1U, std::thread::hardware_concurrency());
+  std::vector<std::thread> workers;
+  std::atomic<size_t> next_job_id(0);
+
+  std::mutex mtx;
+  std::atomic<size_t> finish_pass(0);
+
+  const size_t num_jobs = num_tiles * num_sample;
+
+  for (uint32_t thread_id = 0; thread_id < num_threads; ++thread_id) {
+    workers.emplace_back([&, thread_id]() {
+      RNG rng(thread_id, 1234567890);
+      size_t job_id = 0;
+      while ((job_id = next_job_id++) < num_jobs) {
+        const uint32_t tile_id = uint32_t(job_id % num_tiles);
+        const uint32_t sample  = uint32_t(job_id / num_tiles);
+        const uint32_t counter = RenderingTile(
+            scene, /*num_sample TODO*/ 1, *(render_tiles[tile_id]), rng, layer,
+            finished_jobs_counters[sample].get());
+
+        if (counter == num_tiles) {
+          std::lock_guard<std::mutex> lock(mtx);
+          if (sample >= finish_pass) {
+            // TODO more accurate way
+            finish_pass = sample + 1;
+            printf("finish pass %lu\n", finish_pass.load());
+          }
+        }
+      }
+    });
+  }
+
+  for (auto& worker : workers) {
+    worker.join();
   }
 
   return true;

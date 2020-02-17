@@ -4,6 +4,7 @@ set(PBRLAB_SOURCES
     matrix.cc
     render.cc
     render-layer.cc
+    render-tile.cc
     scene.cc
     io/image-io.cc
     io/stb_image.cc

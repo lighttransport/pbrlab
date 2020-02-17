@@ -27,6 +27,8 @@ void Scene::CommitScene(void) {
   }
 
   light_manager_->Commit();
+
+  raytracer_.GetSceneAABB(bmin_, bmax_);
 }
 
 uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
@@ -76,8 +78,8 @@ uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
   return instance_id;
 }
 
-const std::shared_ptr<LightManager> Scene::GetLightManager(void) const {
-  return light_manager_;
+const LightManager* Scene::GetLightManager(void) const {
+  return light_manager_.get();
 }
 
 const MaterialParameter* Scene::FetchMeshMaterialParamPtr(
@@ -115,7 +117,13 @@ float3 Scene::FetchMeshShadingNormal(const TraceResult& trace_result) const {
 }
 
 void Scene::FetchSceneAABB(float* bmin, float* bmax) const {
-  raytracer_.GetSceneAABB(bmin, bmax);
+  bmin[0] = bmin_[0];
+  bmin[1] = bmin_[1];
+  bmin[2] = bmin_[2];
+
+  bmax[0] = bmax_[0];
+  bmax[1] = bmax_[1];
+  bmax[2] = bmax_[2];
 }
 
 TraceResult Scene::TraceFirstHit1(const Ray& ray) const {
