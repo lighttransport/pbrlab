@@ -39,6 +39,7 @@
 #ifndef PBRLAB_MICROFACET_GGX_H_
 #define PBRLAB_MICROFACET_GGX_H_
 
+#include "closure/closure-util.h"
 #include "pbrlab_math.h"
 #include "type.h"
 
@@ -59,16 +60,6 @@ inline float D_GTR2(const float3& h, const float alpha2) {
 
   return alpha2 / (kPi * cos_theta_m4 * (alpha2 + tan_theta_m2) *
                    (alpha2 + tan_theta_m2));
-}
-
-template <typename T>
-inline T FrSchlick(const float3& omega_in, const float3 omega_out,
-                   const T& f0) {
-  const float cos_ = vdot(omega_in, omega_out);
-  const float tmp1 = 1.0f - cos_;
-  const float tmp2 = tmp1 * tmp1;
-  const float tmp4 = tmp2 * tmp2;
-  return f0 + (T(1.0f) - f0) * tmp1 * tmp4;
 }
 
 inline auto MicrofacetGgxSampleSlopes(const float cos_theta_i,
@@ -178,7 +169,7 @@ inline auto MicrofacetSampleStretched(const float3 omega_i, const float alpha_x,
 
 inline auto MicrofacetGGXBsdfPdf(const float3& omega_in,
                                  const float3& omega_out, const float alpha_x,
-                                 const float alpha_y, const float ior,
+                                 const float alpha_y,
                                  const int distrib = 2 /*TODO*/) {
   struct {
     float3 bsdf_f = float3(0.f);
@@ -251,9 +242,6 @@ inline auto MicrofacetGGXBsdfPdf(const float3& omega_in,
     /* eq. 20 */
     const float common = D * 0.25f / cos_n_o / cos_n_i;
 
-    // TODO fresnel here ? outside?
-    (void)ior;
-
     ret.bsdf_f = G * common;
     if (distrib == 1) ret.bsdf_f = 0.25f * ret.bsdf_f;
 
@@ -266,7 +254,7 @@ inline auto MicrofacetGGXBsdfPdf(const float3& omega_in,
 }
 
 inline auto MicrofacetGGXSample(const float3& omega_out, const float alpha_x,
-                                const float alpha_y, const float ior,
+                                const float alpha_y,
                                 const std::array<float, 2>& u,
                                 const bool refractive = false,
                                 const int distrib     = 2 /*TODO*/) {
@@ -299,7 +287,7 @@ inline auto MicrofacetGGXSample(const float3& omega_out, const float alpha_x,
         // TODO calculation without G1o. The performance improve?
         (void)G1o;
         const auto tmp_ = MicrofacetGGXBsdfPdf(ret.omega_in, omega_out, alpha_x,
-                                               alpha_y, ior, distrib);
+                                               alpha_y, distrib);
         ret.bsdf_f      = tmp_.bsdf_f;
         ret.pdf         = tmp_.pdf;
       } else {

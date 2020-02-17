@@ -27,13 +27,22 @@ struct CyclesPrincipledBsdf {
   float alpha_x          = 1.f;
   float alpha_y          = 1.f;
   float ior              = 1.5f;
-  float3 fs0             = float3(0.f);
+  float3 specular_color  = float3(0.f);
 };
 
 struct CyclesSampleWeight {
   float diffuse_sample_weight;
   float specular_sample_weight;
 };
+
+static float3 SpecularColor(const float3& omega_in, const float3& omega_out,
+                            const float3& specular_color, const float ior) {
+  const float3 h = vnormalized(omega_in + omega_out);
+  const float f0 = FresnelDielectricCos(1.0f, ior);
+  const float fh =
+      (FresnelDielectricCos(vdot(h, omega_out), ior) - f0) / (1.0f - f0);
+  return (specular_color) * (1.f - fh) + float3(fh);
+}
 
 static CyclesSampleWeight FetchClosureSampleWeight(
     const float3& omega_out, const CyclesPrincipledBsdf& bsdf) {
@@ -45,8 +54,9 @@ static CyclesSampleWeight FetchClosureSampleWeight(
   ret.specular_sample_weight =
       bsdf.enable_specular
           ? RgbToY(bsdf.specular_weight *
-                   FrSchlick(float3(0.0f, 0.0f, 1.0f) /*normal*/, omega_out,
-                             bsdf.fs0))
+                   SpecularColor(float3(-omega_out[0], -omega_out[1],
+                                        omega_out[2]) /*half vector is normal*/,
+                                 omega_out, bsdf.specular_color, bsdf.ior))
           : 0.f;
 
   {  // normalize
@@ -81,13 +91,14 @@ static void EvalBsdf(const float3& omega_in, const float3& omega_out,
   }
 
   if (bsdf.enable_specular) {  // specular
-    const auto _ret = MicrofacetGGXBsdfPdf(omega_in, omega_out, bsdf.alpha_x,
-                                           bsdf.alpha_y, bsdf.ior);
+    const auto _ret =
+        MicrofacetGGXBsdfPdf(omega_in, omega_out, bsdf.alpha_x, bsdf.alpha_y);
 
     // Calc fresnel
-    const float3 h = vnormalized(omega_in + omega_out);
     *bsdf_f +=
-        bsdf.specular_weight * FrSchlick(h, omega_out, bsdf.fs0) * _ret.bsdf_f;
+        bsdf.specular_weight *
+        SpecularColor(omega_in, omega_out, bsdf.specular_color, bsdf.ior) *
+        _ret.bsdf_f;
     *pdf += w.specular_sample_weight * _ret.pdf;
   }
 }
@@ -106,9 +117,9 @@ static void SampleBsdf(const float3& omega_out,
     *omega_in      = tmp.omega_in;
   } else {
     const std::array<float, 2> u_specular = {rng.Draw(), rng.Draw()};
-    const auto tmp = MicrofacetGGXSample(omega_out, bsdf.alpha_x, bsdf.alpha_y,
-                                         bsdf.ior, u_specular);
-    *omega_in      = tmp.omega_in;
+    const auto tmp =
+        MicrofacetGGXSample(omega_out, bsdf.alpha_x, bsdf.alpha_y, u_specular);
+    *omega_in = tmp.omega_in;
   }
 
   EvalBsdf(*omega_in, omega_out, bsdf, bsdf_f, pdf);
@@ -243,7 +254,8 @@ static CyclesPrincipledBsdf ParamToBsdf(
     const float3 rho_tint =
         y_base_color > 0.0f ? base_color / y_base_color : float3(0.0f);
     const float3 rho_specular = Lerp(float3(1.0f), rho_tint, specular_tint);
-    bsdf.fs0 = Lerp(0.08f * specular * rho_specular, base_color, metallic);
+    bsdf.specular_color =
+        Lerp(0.08f * specular * rho_specular, base_color, metallic);
   }
 
   return bsdf;
