@@ -109,4 +109,4 @@ list(APPEND PBRLAB_EXT_LIBRARIES ghc_filesystem)
 set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)
 
 add_subdirectory(src)
-add_subdirectory(cli)
+add_subdirectory(pc)
