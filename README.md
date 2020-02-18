@@ -46,6 +46,7 @@ The following files are derived from these;
 * TinyObjLoader : MIT license.
 * TinyEXR : BSD license.
 * imgui : MIT license.
+* ImGuizmo : MIT license.
 * stb_image, stb_image_write, stb_image_resize : Public domain
 * glfw3 : zlib/libpng license.
 * glad : unlicense?

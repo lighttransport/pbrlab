@@ -59,6 +59,10 @@ if(PBRLAB_USE_CCACHE)
 endif()
 
 
+set(PBRLAB_EXT_INCLUDE_DIRS_PRIVATE "")
+set(PBRLAB_EXT_LIBRARIES_PRIVATE "")
+set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
+
 # find package and check third party
 # - OpenGL
 # - glfw3
@@ -91,19 +95,19 @@ if (PBRLAB_WITH_EMBREE)
     set(EMBREE_ADDRESS_SANITIZER On CACHE INTERNAL "" FORCE)
     message(STATUS "Enable ASAN for Embree3")
   endif ()
-  set(EMBREE_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/third_party/embree-aarch64/include)
   
   add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/embree-aarch64)
-  list(APPEND PBRLAB_EXT_LIBRARIES embree)
+  list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE embree)
+  list(APPEND PBRLAB_EXT_INCLUDE_DIRS_PRIVATE ${CMAKE_SOURCE_DIR}/third_party/embree-aarch64/include)
 endif (PBRLAB_WITH_EMBREE)
 
 # [mpark variant]
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/variant)
-list(APPEND PBRLAB_EXT_LIBRARIES mpark_variant)
+list(APPEND PBRLAB_EXT_LIBRARIES_PUBLIC mpark_variant)
 
 # [ghc filesystem]
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/filesystem)
-list(APPEND PBRLAB_EXT_LIBRARIES ghc_filesystem)
+list(APPEND PBRLAB_EXT_LIBRARIES_PUBLIC ghc_filesystem)
 
 
 set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)

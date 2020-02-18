@@ -10,11 +10,35 @@ else()
     message(STATUS "Stack trace logger: DISABLED")
 endif()
 
+set(PBRLAB_GUI_DEPS_INCLUDE_DIRS
+  ${PROJECT_SOURCE_DIR}/deps
+  ${PROJECT_SOURCE_DIR}/deps/glad/include
+)
+set(PBRLAB_GUI_DEPS_SOURCES
+  ${PROJECT_SOURCE_DIR}/deps/glad/src/glad.c
+  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui.cpp
+  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_draw.cpp
+  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_widgets.cpp
+  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_opengl3.cpp
+  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_glfw.cpp
+  ${PROJECT_SOURCE_DIR}/deps/ImGuizmo/ImGuizmo.cpp
+)
+add_library(${BUILD_TARGET}-gui-deps STATIC ${PBRLAB_GUI_DEPS_SOURCES})
+target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_DEPS_INCLUDE_DIRS})
+target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
+target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
+
 
 set(EXECUTABLE_TARGETS "")
 
-add_executable(pbrlab-cli ./pbrlab-cli.cc)
-list(APPEND EXECUTABLE_TARGETS pbrlab-cli)
+add_executable(${BUILD_TARGET}-cli ./pbrlab-cli.cc)
+list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-cli)
+
+add_executable(${BUILD_TARGET}-gui pbrlab-gui.cc
+                                   glfw-window.cc)
+list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-gui)
+target_link_libraries(${BUILD_TARGET}-gui PRIVATE ${BUILD_TARGET}-gui-deps)
+target_link_libraries(${BUILD_TARGET}-gui PRIVATE glfw ${OPENGL_LIBRARIES})
 
 
 foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)

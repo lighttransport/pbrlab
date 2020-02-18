@@ -22,20 +22,6 @@ set(PBRLAB_SOURCES
 add_library(${BUILD_TARGET} SHARED
             ${PBRLAB_SOURCES})
 
-set(PBRLAB_DEP_SOURCES
-  ${PROJECT_SOURCE_DIR}/third_party/StaticJSON/src/staticjson.cpp
-  )
-# set(PBRLAB_DEP_SOURCES
-#     ${PROJECT_SOURCE_DIR}/src/trackball.cc
-#     ${PROJECT_SOURCE_DIR}/deps/glad/src/glad.c
-#     ${PROJECT_SOURCE_DIR}/deps/imgui/imgui.cpp
-#     ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_draw.cpp
-#     ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_widgets.cpp
-#     ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_opengl3.cpp
-#     ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_glfw.cpp
-#     )
-
-
 target_compile_features(${BUILD_TARGET}
                         PRIVATE cxx_std_11)   
 
@@ -46,15 +32,14 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 
 target_include_directories(${BUILD_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/src)
 
-# [StaticJson,rapidjson,toml11,embree]
 target_include_directories(${BUILD_TARGET} SYSTEM PRIVATE 
-                           ${PROJECT_SOURCE_DIR}/third_party/StaticJSON/include
-                           ${PROJECT_SOURCE_DIR}/third_party/rapidjson/include
-                           ${PROJECT_SOURCE_DIR}/third_party/toml11
-                           ${EMBREE_INCLUDE_DIRS})
+                           ${PBRLAB_EXT_INCLUDE_DIRS_PRIVATE})
+
+target_link_libraries(${BUILD_TARGET} PRIVATE
+                      ${PBRLAB_EXT_LIBRARIES_PRIVATE})
 
 target_link_libraries(${BUILD_TARGET} PUBLIC
-                      ${PBRLAB_EXT_LIBRARIES})
+                      ${PBRLAB_EXT_LIBRARIES_PUBLIC})
 
 set_target_properties(${BUILD_TARGET} PROPERTIES
   OUTPUT_NAME ${BUILD_TARGET}
