@@ -64,12 +64,19 @@ set(PBRLAB_EXT_LIBRARIES_PRIVATE "")
 set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
 
 # find package and check third party
+# - pthread
 # - OpenGL
 # - glfw3
 # - Embree3
 # - mpark variant
 # - ghc filesystem
 # TODO check third_party
+
+# [Threads]
+find_package(Threads REQUIRED)
+if(NOT Threads_FOUND)
+  message(FATAL_ERROR "Threads not found")
+endif()
 
 # [OpenGL]
 find_package(OpenGL REQUIRED)

@@ -39,7 +39,8 @@ target_link_libraries(${BUILD_TARGET} PRIVATE
                       ${PBRLAB_EXT_LIBRARIES_PRIVATE})
 
 target_link_libraries(${BUILD_TARGET} PUBLIC
-                      ${PBRLAB_EXT_LIBRARIES_PUBLIC})
+                      ${PBRLAB_EXT_LIBRARIES_PUBLIC}
+                      Threads::Threads)
 
 set_target_properties(${BUILD_TARGET} PROPERTIES
   OUTPUT_NAME ${BUILD_TARGET}
