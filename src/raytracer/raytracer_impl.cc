@@ -181,7 +181,7 @@ static TraceResult EmbreeRayToTraceResult(const RTCRayHit& rayhit) {
 
     tr.t = rayhit.ray.tfar;
     tr.u = rayhit.hit.u;
-    tr.u = rayhit.hit.v;
+    tr.v = rayhit.hit.v;
 
     tr.instance_id = rayhit.hit.instID[0];
     tr.geom_id     = rayhit.hit.geomID;
