@@ -10,6 +10,7 @@
 #include "type.h"
 
 namespace pbrlab {
+namespace random_walk_sss {
 
 //
 // "Practical and Controllable Subsurface Scattering for Production Path
@@ -266,5 +267,6 @@ inline bool RandomWalkSubsurface(const Scene& scene,
   return true;
 }
 
+}  // namespace random_walk_sss
 }  // namespace pbrlab
 #endif  // PBRLAB_RANDOM_WALK_SSS_H_

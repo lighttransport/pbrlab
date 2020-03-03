@@ -1,9 +1,13 @@
 #ifndef PBRLAB_SHADER_UTILS_H_
 #define PBRLAB_SHADER_UTILS_H_
 #include <math.h>
+#include <functional>
 
 #include "material-param.h"
+#include "matrix.h"
+#include "pbrlab-util.h"
 #include "pbrlab_math.h"
+#include "random/rng.h"
 #include "ray.h"
 #include "raytracer/raytracer.h"
 #include "scene.h"
@@ -149,6 +153,53 @@ inline SurfaceInfo TraceResultToSufaceInfo(const Ray& ray, const Scene& scene,
   surface_info.material_param = scene.FetchMeshMaterialParamPtr(trace_result);
 
   return surface_info;
+}
+
+inline float3 DirectIllumination(
+    const Scene& scene, const float3& omega_out,
+    const SurfaceInfo& surface_info, const float Rgl[4][4],
+    const float3 global_normal, const RNG& rng,
+    const std::function<void(const float3& omega_in, const float3& omega_out,
+                             float3* bsdf_f, float* pdf)>
+        EvalFunc) {
+  const LightManager* light_manager = scene.GetLightManager();
+  const auto result_light_sample    = light_manager->SampleAllLight(rng);
+
+  float3 contribute(0.f);
+
+  if (result_light_sample.light_type == kAreaLight) {
+    // Area measure
+    const float3& pos            = surface_info.global_position;
+    const float3& light_position = result_light_sample.v1;
+    const float3& light_normal   = result_light_sample.v2;
+    const float3 dir_to_light =
+        vnormalized(light_position - surface_info.global_position);
+    const float dist = vlength(pos - light_position);
+
+    const float wl_dot_nl = -vdot(dir_to_light, light_normal);
+    const float wl_dot_np = vdot(dir_to_light, global_normal);
+
+    // To solid angle measure
+    const float pdf_sigma =
+        result_light_sample.pdf * dist * dist / (wl_dot_nl * wl_dot_np);
+
+    if (wl_dot_nl > 0.0f && wl_dot_np > 0.0f &&
+        !ShadowRay(scene, pos, dir_to_light, dist)) {
+      float3 omega_l;
+      Matrix::MultV(dir_to_light.v, Rgl, omega_l.v);
+
+      float3 bsdf_f(0.0f);
+      float ret_pdf = 0.f;
+      EvalFunc(omega_l, omega_out, &bsdf_f, &ret_pdf);
+
+      const float weight =
+          PowerHeuristicWeight(pdf_sigma /*light*/, ret_pdf /*bsdf*/);
+
+      contribute = bsdf_f * result_light_sample.emission * weight / (pdf_sigma);
+      assert(IsFinite(contribute));
+    }
+  }
+  return contribute;
 }
 
 }  // namespace pbrlab
