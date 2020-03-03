@@ -13,6 +13,17 @@ inline float3 CosineSampleHemisphere(const float u1, const float u2) {
                 std::sqrt(std::max(1.0f - u2, 0.0f)));
 }
 
+inline float3 UniformSampleSphere(const float u1, const float u2) {
+  const float u     = 2.0f * u2 - 1.0f;
+  const float norm  = std::sqrt(std::max(0.0f, 1.0f - u * u));
+  const float theta = 2.0f * kPi * u1;
+
+  // Y up
+  return float3(norm * std::cos(theta), u, norm * std::sin(theta));
+}
+
+inline float UniformSampleSpherePdf() { return 1.0f / (4.0f * kPi); }
+
 inline float PowerHeuristicWeight(const float sampled_pdf,
                                   const float other_pdf) {
   float r = 0.f, mis = 0.f;

@@ -5,6 +5,7 @@
 #include "material-param.h"
 #include "pbrlab_math.h"
 #include "ray.h"
+#include "raytracer/raytracer.h"
 #include "scene.h"
 #include "type.h"
 
@@ -116,5 +117,39 @@ inline bool ShadowRay(const Scene& scene, const float3& pos, const float3& dir,
 
   return scene.AnyHit1(ray);
 }
+
+inline SurfaceInfo TraceResultToSufaceInfo(const Ray& ray, const Scene& scene,
+                                           const TraceResult& trace_result) {
+  SurfaceInfo surface_info = {};
+
+  surface_info.u = trace_result.u;
+  surface_info.v = trace_result.v;
+
+  surface_info.instance_id = trace_result.instance_id;
+  surface_info.geom_id     = trace_result.geom_id;
+  surface_info.prim_id     = trace_result.prim_id;
+
+  surface_info.global_position = ray.ray_org + trace_result.t * ray.ray_dir;
+
+  surface_info.normal_s = scene.FetchMeshShadingNormal(trace_result);
+  surface_info.normal_g = float3(trace_result.normal_g);
+
+  // TODO tangent, binormal
+
+  // back face test
+  if (vdot(ray.ray_dir, surface_info.normal_g) < 0.0f &&
+      vdot(ray.ray_dir, surface_info.normal_s) < 0.0f)
+    surface_info.face_direction = SurfaceInfo::kFront;
+  else if (vdot(ray.ray_dir, surface_info.normal_g) > 0.0f &&
+           vdot(ray.ray_dir, surface_info.normal_s) > 0.0f)
+    surface_info.face_direction = SurfaceInfo::kBack;
+  else
+    surface_info.face_direction = SurfaceInfo::kAmbiguous;
+
+  surface_info.material_param = scene.FetchMeshMaterialParamPtr(trace_result);
+
+  return surface_info;
+}
+
 }  // namespace pbrlab
 #endif  // PBRLAB_SHADER_UTILS_H_

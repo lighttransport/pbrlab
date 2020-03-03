@@ -10,6 +10,10 @@ constexpr const float kPiInv = 0.318309886183f;
 constexpr const float kEps = 1e-3f;      // TODO
 constexpr const float kInf = 1.844E18f;  // for embree
 
+template <typename T>
+inline T Sqr(const T& v) {
+  return v * v;
+}
 inline float SafeSqrtf(float f) { return std::sqrt(std::max(f, 0.0f)); }
 
 // TODO better way
