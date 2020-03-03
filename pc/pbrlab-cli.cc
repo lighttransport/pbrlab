@@ -37,8 +37,12 @@ int main(int argc, char** argv) {
   const size_t height  = 512;
   const size_t samples = 32;
 
+  std::atomic_bool cancel_render_flag(false);
+  std::atomic_size_t finish_pass(0);
+
   pbrlab::RenderLayer layer;
-  pbrlab::Render(scene, width, height, samples, &layer);
+  pbrlab::Render(scene, width, height, samples, cancel_render_flag, &layer,
+                 &finish_pass);
 
   std::vector<float> color(width * height * 4);
 

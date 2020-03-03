@@ -183,7 +183,9 @@ static uint32_t RenderingTile(const Scene& scene, const uint32_t num_sample,
 }
 
 bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
-            const uint32_t num_sample, RenderLayer* layer) {
+            const uint32_t num_sample,
+            const std::atomic_bool& cancel_render_flag, RenderLayer* layer,
+            std::atomic_size_t* finish_pass) {
   std::vector<std::unique_ptr<RenderTile>> render_tiles;
   std::vector<std::unique_ptr<std::atomic<uint32_t>>> finished_jobs_counters;
   PrepareRendering(scene, width, height, num_sample, layer, &render_tiles,
@@ -197,7 +199,7 @@ bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
   std::atomic<size_t> next_job_id(0);
 
   std::mutex mtx;
-  std::atomic<size_t> finish_pass(0);
+  *finish_pass = 0;
 
   const size_t num_jobs = num_tiles * num_sample;
 
@@ -205,7 +207,7 @@ bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
     workers.emplace_back([&, thread_id]() {
       RNG rng(thread_id, 1234567890);
       size_t job_id = 0;
-      while ((job_id = next_job_id++) < num_jobs) {
+      while ((job_id = next_job_id++) < num_jobs && !cancel_render_flag) {
         const uint32_t tile_id = uint32_t(job_id % num_tiles);
         const uint32_t sample  = uint32_t(job_id / num_tiles);
         const uint32_t counter = RenderingTile(
@@ -214,10 +216,10 @@ bool Render(const Scene& scene, const uint32_t width, const uint32_t height,
 
         if (counter == num_tiles) {
           std::lock_guard<std::mutex> lock(mtx);
-          if (sample >= finish_pass) {
+          if (sample >= *finish_pass) {
             // TODO more accurate way
-            finish_pass = sample + 1;
-            printf("finish pass %lu\n", finish_pass.load());
+            *finish_pass = sample + 1;
+            printf("finish pass %lu\n", finish_pass->load());
           }
         }
       }

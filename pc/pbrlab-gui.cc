@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 
   const uint32_t width   = 1024;  // TODO
   const uint32_t height  = 1024;  // TODO
-  const uint32_t samples = 512;   // TODO
+  const uint32_t samples = 8192;  // TODO
   GLWindow gl_window(int(width), int(height), "PBR lab Viewer");
   printf("start app\n");
 
@@ -142,14 +142,24 @@ int main(int argc, char** argv) {
 
   std::atomic_bool finish_frag(false);
 
+  std::atomic_bool cancel_render_flag(false);
+  std::atomic_size_t finish_pass(0);
+
   // Start Rendering thread
   pbrlab::RenderLayer layer;
-  std::thread rendering(
-      [&](void) { pbrlab::Render(scene, width, height, samples, &layer); });
+  std::thread rendering([&](void) {
+    pbrlab::Render(scene, width, height, samples, cancel_render_flag, &layer,
+                   &finish_pass);
+  });
 
   std::thread buffer_updater([&](void) {
+    size_t last_render_pass = 0;
     while (!finish_frag) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      if (last_render_pass >= finish_pass) {
+        std::this_thread::sleep_for(std::chrono::microseconds(333333));
+        continue;
+      }
+      last_render_pass = finish_pass;
       BufferUpdater(layer, gui_context.pImageBuffer.get());
     }
   });
@@ -166,7 +176,8 @@ int main(int argc, char** argv) {
     gl_window.SwapBuffers();
   }
 
-  finish_frag = true;
+  cancel_render_flag = true;
+  finish_frag        = true;
 
   rendering.join();
   buffer_updater.join();
