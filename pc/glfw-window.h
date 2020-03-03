@@ -46,16 +46,30 @@
 #endif
 
 class GLWindow {
+private:
   // handle(pointer) of window
   GLFWwindow *const window_;
+  GuiParameter gui_param_;
+  GLuint shader_program_id_;
 
-  GuiParameter gui_param;
+  size_t current_tex_id_ = size_t(-1);
+  std::vector<GLuint> texture_ids_;
 
 public:
   GLWindow() = delete;
   GLWindow(int width, int height, const char *title);
 
   virtual ~GLWindow();
+
+  size_t CreateGlTexture(void);
+  bool SetCurrentGlTexture(const size_t tex_id);
+  size_t CreateBuffer(const size_t width, const size_t height,
+                      const size_t channel);
+  bool SetCurrentBuffer(const size_t buffer_id);
+  std::shared_ptr<ImageBuffer> FetchBuffer(const size_t buffer_id);
+
+  void DrawCurrentBuffer(void);
+
   // Determine if the window should be closed
   int ShouldClose() const;
   // Fetch event with swapping color buffer

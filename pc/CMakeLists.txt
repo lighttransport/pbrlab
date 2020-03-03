@@ -31,11 +31,13 @@ target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_
 
 set(EXECUTABLE_TARGETS "")
 
-add_executable(${BUILD_TARGET}-cli ./pbrlab-cli.cc)
+add_executable(${BUILD_TARGET}-cli ./pbrlab-cli.cc
+                                   ./pc-common.cc)
 list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-cli)
 
 add_executable(${BUILD_TARGET}-gui pbrlab-gui.cc
-                                   glfw-window.cc)
+                                   glfw-window.cc
+                                   pc-common.cc)
 list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-gui)
 target_link_libraries(${BUILD_TARGET}-gui PRIVATE ${BUILD_TARGET}-gui-deps)
 target_link_libraries(${BUILD_TARGET}-gui PRIVATE glfw ${OPENGL_LIBRARIES})

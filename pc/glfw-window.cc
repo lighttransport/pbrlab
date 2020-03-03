@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <string>
+
 #include "gui-parameter.h"
 
 #ifdef __clang__
@@ -30,7 +32,6 @@ static void ReshapeFunc(GLFWwindow *window, int w, int h) {
   int fb_w, fb_h;
   // Get actual framebuffer size.
   glfwGetFramebufferSize(window, &fb_w, &fb_h);
-
   glViewport(0, 0, fb_w, fb_h);
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
@@ -168,6 +169,46 @@ static void InitializeImgui(GLFWwindow *window) {
   ImGui_ImplOpenGL3_Init();
 }
 
+static GLuint CreateGlShader() {
+  // Compile vertex shader
+  GLuint v_shader_id       = glCreateShader(GL_VERTEX_SHADER);
+  std::string vertexShader = R"#(
+    attribute vec3 position;
+    attribute vec2 uv;
+    varying vec2 vuv;
+    void main(void){
+        gl_Position = vec4(position, 1.0);
+        vuv = uv;
+    }
+    )#";
+  const char *vs           = vertexShader.c_str();
+  glShaderSource(v_shader_id, 1, &vs, nullptr);
+  glCompileShader(v_shader_id);
+
+  // Compile fragment shader
+  GLuint f_shader_id         = glCreateShader(GL_FRAGMENT_SHADER);
+  std::string fragmentShader = R"#(
+    varying vec2 vuv;
+    uniform sampler2D texture;
+    void main(void){
+        gl_FragColor = texture2D(texture, vuv);
+    }
+    )#";
+  const char *fs             = fragmentShader.c_str();
+  glShaderSource(f_shader_id, 1, &fs, nullptr);
+  glCompileShader(f_shader_id);
+
+  // Create program object
+  GLuint program_id = glCreateProgram();
+  glAttachShader(program_id, v_shader_id);
+  glAttachShader(program_id, f_shader_id);
+
+  // link
+  glLinkProgram(program_id);
+
+  return program_id;
+}
+
 GLWindow::GLWindow(int width, int height, const char *title)
     : window_(glfwCreateWindow(width, height, title, nullptr, nullptr)) {
   // Create Window
@@ -184,7 +225,7 @@ GLWindow::GLWindow(int width, int height, const char *title)
   glfwSwapInterval(1);
 
   // register gui_param pointer in this instance
-  glfwSetWindowUserPointer(window_, &gui_param);
+  glfwSetWindowUserPointer(window_, &gui_param_);
 
   // Register Callback funtion that is called when window size is changed
   glfwSetWindowSizeCallback(window_, ReshapeFunc);
@@ -213,9 +254,138 @@ GLWindow::GLWindow(int width, int height, const char *title)
   InitializeImgui(window_);
 
   ReshapeFunc(window_, width, height);
+
+  // create shader program object
+  shader_program_id_ = CreateGlShader();
+  if (shader_program_id_ == 0) {
+    fprintf(stderr, "faild create shader program object\n");
+    exit(EXIT_FAILURE);
+  }
 }
 
-GLWindow::~GLWindow() { glfwDestroyWindow(window_); }
+GLWindow::~GLWindow() {
+  // Release Texture
+  for (const auto ti : texture_ids_) {
+    GLuint tmp = GLuint(ti);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glDeleteTextures(1, &tmp);
+    assert(glGetError() == GL_NO_ERROR);
+  }
+
+  glfwDestroyWindow(window_);
+}
+
+static GLuint CreateGlTexture(void) {
+  GLuint ret;
+  glGenTextures(1, &ret);
+  return ret;
+}
+
+size_t GLWindow::CreateGlTexture(void) {
+  const size_t tex_id = texture_ids_.size();
+  texture_ids_.emplace_back(::CreateGlTexture());
+  return tex_id;
+}
+
+bool GLWindow::SetCurrentGlTexture(const size_t tex_id) {
+  if (tex_id < texture_ids_.size()) {
+    current_tex_id_ = tex_id;
+    return true;
+  }
+  return false;
+}
+
+size_t GLWindow::CreateBuffer(const size_t width, const size_t height,
+                              const size_t channel) {
+  const size_t buffer_id = gui_param_.pImageBuffers.size();
+
+  gui_param_.pImageBuffers.emplace_back(new ImageBuffer);
+  auto &bf = gui_param_.pImageBuffers.back();
+
+  {
+    std::lock_guard<std::mutex> lock(bf->mtx);
+    bf->buffer.resize(width * height * channel, 0.f);
+    bf->width      = width;
+    bf->height     = height;
+    bf->channel    = channel;
+    bf->has_update = true;
+  }
+
+  return buffer_id;
+}
+
+bool GLWindow::SetCurrentBuffer(const size_t buffer_id) {
+  if (buffer_id < gui_param_.pImageBuffers.size()) {
+    gui_param_.current_buffer_id = buffer_id;
+    return true;
+  }
+  return false;
+}
+
+std::shared_ptr<ImageBuffer> GLWindow::FetchBuffer(const size_t buffer_id) {
+  return gui_param_.pImageBuffers.at(buffer_id);
+}
+
+void GLWindow::DrawCurrentBuffer(void) {
+  if (gui_param_.current_buffer_id >= gui_param_.pImageBuffers.size()) {
+    return;
+  }
+  ImageBuffer *image_buffer =
+      gui_param_.pImageBuffers[gui_param_.current_buffer_id].get();
+  if (current_tex_id_ >= texture_ids_.size()) {
+    return;
+  }
+  const GLuint tex_id = texture_ids_[current_tex_id_];
+
+  glUseProgram(shader_program_id_);
+  // vertex data
+  const float vertex_position[] = {1.f, 1.f, -1.f, 1.f, -1.f, -1.f, 1.f, -1.f};
+  const GLfloat vertex_uv[]     = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f, 1.f};
+
+  // Fetch attributes location
+  const GLint position_location =
+      glGetAttribLocation(shader_program_id_, "position");
+  const GLint uv_location = glGetAttribLocation(shader_program_id_, "uv");
+  const GLint texture_location =
+      glGetUniformLocation(shader_program_id_, "texture");
+
+  // Enable attributes
+  glEnableVertexAttribArray(GLuint(position_location));
+  glEnableVertexAttribArray(GLuint(uv_location));
+
+  // uniform attribute
+  glUniform1i(texture_location, 0);
+  // register attribute
+  glVertexAttribPointer(GLuint(position_location), 2, GL_FLOAT, false, 0,
+                        vertex_position);
+  glVertexAttribPointer(GLuint(uv_location), 2, GL_FLOAT, false, 0, vertex_uv);
+
+  // Set Buffer
+  {
+    std::lock_guard<std::mutex> lock(image_buffer->mtx);
+    if (image_buffer->has_update) {
+      // Transfer buffer to GPU
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      glBindTexture(GL_TEXTURE_2D, tex_id);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, int(image_buffer->width),
+                   int(image_buffer->height), 0, GL_RGBA, GL_FLOAT,
+                   image_buffer->buffer.data());
+      // SetTexture
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+      // unbind TODO need?
+      glBindTexture(GL_TEXTURE_2D, 0);
+      image_buffer->has_update = false;
+    }
+  }
+
+  // Draw
+  glBindTexture(GL_TEXTURE_2D, tex_id);
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
 
 // Determine if the window should be closed
 int GLWindow::ShouldClose() const { return glfwWindowShouldClose(window_); }
@@ -224,5 +394,5 @@ void GLWindow::SwapBuffers() {
   // swap color buffer
   glfwSwapBuffers(window_);
   // Fetch event
-  glfwWaitEvents();
+  glfwPollEvents();
 }
