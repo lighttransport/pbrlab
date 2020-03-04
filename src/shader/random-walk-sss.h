@@ -12,6 +12,97 @@
 namespace pbrlab {
 namespace random_walk_sss {
 
+/*
+ * Copyright 2011-2013 Blender Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Approximate Reflectance Profiles
+ * http://graphics.pixar.com/library/ApproxBSSRDF/paper.pdf
+ */
+
+inline float BssrdfBurleyFitting(float A) {
+  /* Diffuse surface transmission, equation (6). */
+  return 1.9f - A + 3.5f * (A - 0.8f) * (A - 0.8f);
+}
+
+inline float BssrdfBurleyFitting5(float A) {
+  /* Diffuse surface transmission, equation (5). */
+  return 1.85f - A + 7.0f * std::fabs((A - 0.8f) * (A - 0.8f) * (A - 0.8f));
+}
+
+/* Scale mean free path length so it gives similar looking result
+ * to Cubic and Gaussian models.
+ */
+inline float3 BssrdfBurleyCompatibleMfp(float3 r) {
+  return 0.25f * (1.0f / kPi) * r;
+}
+
+inline void BssrdfBurleySetup(const float3& albedo, const float3& radius,
+                              const bool scale_mfp, const int mode,
+                              float3* radius_out) {
+  /* Mean free path length. */
+  const float3 l = scale_mfp ? BssrdfBurleyCompatibleMfp(radius) : radius;
+  /* Surface albedo. */
+  const float3 A = albedo;
+  float3 s;
+  if (mode == 0) {  // eq6
+    s = float3(BssrdfBurleyFitting(A[0]), BssrdfBurleyFitting(A[1]),
+               BssrdfBurleyFitting(A[2]));
+  } else {  // eq5
+    s = float3(BssrdfBurleyFitting5(A[0]), BssrdfBurleyFitting5(A[1]),
+               BssrdfBurleyFitting5(A[2]));
+  }
+
+  (*radius_out) = l / s;
+}
+
+inline void BssrdfSetup(const bool burey_radius, const bool scale_mfp,
+                        const bool use_eq5, float3* weight, float3* albedo,
+                        float3* radius, float3* diffuse_weight) {
+  (*diffuse_weight) = float3(0.0f, 0.0f, 0.0f);
+
+  const float kBssrdfMinRadius(1e-8f);
+  float3 kd(0.0f);
+
+  int bssrdf_channels = 3;
+
+  // Turn BSSRDF into BSDF(diffuse) when the scattering radius is too small.
+  for (int i = 0; i < 3; ++i) {
+    if ((*radius)[i] < kBssrdfMinRadius) {
+      kd[i]        = (*weight)[i];
+      (*weight)[i] = 0.f;
+      (*radius)[i] = 0.f;
+      bssrdf_channels--;
+    }
+  }
+
+  if (bssrdf_channels < 3) {
+    // Create diffuse BSDF
+    // Currently we only returns diffuse weight.
+    (*diffuse_weight) = kd;
+  }
+
+  if (bssrdf_channels > 0) {
+    if (burey_radius) {
+      float3 updated_radius;
+      BssrdfBurleySetup(*albedo, *radius, scale_mfp, use_eq5, &updated_radius);
+      *radius = updated_radius;
+    }
+  }
+}
+
 //
 // "Practical and Controllable Subsurface Scattering for Production Path
 //  Tracing". Matt Jen-Yuan Chiang, Peter Kutz, Brent Burley. SIGGRAPH 2016.
@@ -29,9 +120,9 @@ inline void ComputeScatteringCoefficientFromAlbedo(const float A, const float d,
   *sigma_s = *sigma_t * a;
 }
 
-inline void ComputeScatteringCoefficient(const float3& albedo,
-                                         const float3& radius,
-                                         const float3& weight, float3* sigma_t,
+inline void ComputeScatteringCoefficient(const float3& weight,
+                                         const float3& albedo,
+                                         const float3& radius, float3* sigma_t,
                                          float3* sigma_s, float3* throughput) {
   // For each channel
   ComputeScatteringCoefficientFromAlbedo(albedo[0], radius[0], &((*sigma_t)[0]),
@@ -121,16 +212,32 @@ inline float3 AttenuateTransmission(const float3& sigma_t, float distance) {
 ///              \       /\/
 ///               o-----o
 ///
+/**
+ *@param[in] scene scene
+ *@param[in] weight subsurface weight
+ *@param[in] albedo subsurface albedo
+ *@param[in] radius subsurface radius
+ *@param[in] rng random generator
+ *@param[in,out] surface_info surface information
+ *@param[in,out] Rgl Rotation matrix global to local
+ *@param[out] new_omega_out new omega out
+ *@param[out] throughput_out local throughput
+ *@param[out] scatter_bounces scatter bounce
+ */
 inline bool RandomWalkSubsurface(const Scene& scene,
-                                 const SurfaceInfo& subsurface_info,
-                                 const float Rgl[4][4],
-                                 const float3 albedo,  // subsurface color
-                                 const float3 radius,  // subsurface radius
-                                 const float3 weight, const RNG& rng,
-                                 SurfaceInfo* subsurface_info_out,
-                                 float3* new_omega_out, float3* throughput_out,
-                                 int* scatter_bounces) {
+                                 const float3& weight,  // subsurface weight
+                                 const float3& albedo,  // subsurface color
+                                 const float3& radius,  // subsurface radius
+                                 const RNG& rng, SurfaceInfo* surface_info,
+                                 float Rgl[4][4], float3* new_omega_out,
+                                 float3* throughput_out, int* scatter_bounces) {
   (*scatter_bounces) = 0;
+
+  if (surface_info->face_direction != SurfaceInfo::kFront) {
+    // TODO
+    // assert(false);
+    return false;
+  }
 
   float Rlg[4][4];
   Matrix::Copy(Rgl, Rlg);
@@ -141,7 +248,7 @@ inline bool RandomWalkSubsurface(const Scene& scene,
   }
 
   // 1. Sample diffuse surface scatter into the object
-  float3 dir_g;
+  float3 global_dir;
   {
     float3 tmp;
     float pdf              = 0.0f;
@@ -149,8 +256,8 @@ inline bool RandomWalkSubsurface(const Scene& scene,
     LambertBrdfSample(float3(0.f, 0.f, 1.f), u, &tmp, &pdf);
     tmp = -tmp;
 
-    Matrix::MultV(tmp.v, Rlg, dir_g.v);
-    if (vdot(-subsurface_info.normal_g, dir_g) <= 0.0f) {
+    Matrix::MultV(tmp.v, Rlg, global_dir.v);
+    if (vdot(-surface_info->normal_g, global_dir) <= 0.0f) {
       return false;
     }
   }
@@ -161,13 +268,12 @@ inline bool RandomWalkSubsurface(const Scene& scene,
   float3 sigma_t, sigma_s;
   float3 throughput(1.0f);
 
-  ComputeScatteringCoefficient(albedo, radius,
-                               weight /*throughput_in*/ /*float3(1.0f)*/,
-                               &sigma_t, &sigma_s, &throughput);
+  ComputeScatteringCoefficient(weight, albedo, radius, &sigma_t, &sigma_s,
+                               &throughput);
 
   Ray ray;
-  ray.ray_org = subsurface_info.global_position;
-  ray.ray_dir = dir_g;
+  ray.ray_org = surface_info->global_position;
+  ray.ray_dir = global_dir;
   ray.min_t   = 1e-3f;
   ray.max_t   = kInf;
 
@@ -196,6 +302,8 @@ inline bool RandomWalkSubsurface(const Scene& scene,
       ray.ray_dir[0] = wi[0];
       ray.ray_dir[1] = wi[1];
       ray.ray_dir[2] = wi[2];
+
+      ray.min_t = 0.f;
     }
 
     // Distance sampling(includes sample color channel with MIS)
@@ -249,7 +357,7 @@ inline bool RandomWalkSubsurface(const Scene& scene,
     }
 
     // Advance to new scatter(or surface hit) location.
-    ray.ray_org += ray.ray_org + t * ray.ray_dir;
+    ray.ray_org = ray.ray_org + t * ray.ray_dir;
 
     (*scatter_bounces)++;
   }  // bounces
@@ -259,8 +367,36 @@ inline bool RandomWalkSubsurface(const Scene& scene,
     return false;
   }
 
-  *subsurface_info_out = TraceResultToSufaceInfo(ray, scene, trace_result);
-  *new_omega_out       = ray.ray_dir;
+  const uint32_t prev_instance_id = surface_info->instance_id;
+
+  *surface_info = TraceResultToSufaceInfo(ray, scene, trace_result);
+
+  // TODO filtering with ray intersector
+  if (surface_info->instance_id != prev_instance_id) {
+    return false;
+  }
+
+  if (surface_info->face_direction != SurfaceInfo::kBack) {
+    // TODO
+    // assert(surface_info->face_direction != SurfaceInfo::kAmbiguous);
+    return false;
+  }
+
+  {  // Update Rgl
+    // TODO tangent, binormal
+    const float3 ez = surface_info->normal_s;
+    float3 ex, ey;
+    BranchlessONB(ez, &ex, &ey);
+
+#ifdef NDEBUG
+#else
+    assert(CheckONB(ex, ey, ez));
+#endif
+
+    GrobalToShadingLocal(ex, ey, ez, Rgl);
+  }
+
+  Matrix::MultV(ray.ray_dir.v, Rgl, new_omega_out->v);
 
   (*throughput_out) = throughput;
 

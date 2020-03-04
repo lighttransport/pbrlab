@@ -37,7 +37,7 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
       break;
     }
 
-    const SurfaceInfo surface_info =
+    SurfaceInfo surface_info =
         TraceResultToSufaceInfo(ray, scene, trace_result);
 
     {
@@ -69,20 +69,19 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
     // end russian roulette
 
     // start shadeing and sampling nextray
-    float3 next_ray_org;
     float3 next_ray_dir;
     float3 r_throuput;
     float3 d_contribute;
     float _bsdf_sampling_pdf;
-    Shader(scene, -ray.ray_dir, surface_info, rng, &next_ray_org, &next_ray_dir,
-           &r_throuput, &d_contribute, &_bsdf_sampling_pdf);
+    Shader(scene, -ray.ray_dir, rng, &surface_info, &next_ray_dir, &r_throuput,
+           &d_contribute, &_bsdf_sampling_pdf);
 
     contribution      = contribution + throuput * d_contribute;
     throuput          = r_throuput * throuput;
     bsdf_sampling_pdf = _bsdf_sampling_pdf;
     prev_cos          = vdot(next_ray_dir, surface_info.normal_s);
 
-    ray.ray_org = next_ray_org;
+    ray.ray_org = surface_info.global_position;
     ray.ray_dir = next_ray_dir;
     ray.min_t   = 1e-3f;
     ray.max_t   = kInf;

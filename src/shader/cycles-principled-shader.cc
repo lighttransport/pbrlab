@@ -12,6 +12,7 @@
 #include "random/rng.h"
 #include "sampler/sampling-utils.h"
 #include "shader-utils.h"
+#include "shader/random-walk-sss.h"
 #include "type.h"
 
 namespace pbrlab {
@@ -20,6 +21,11 @@ struct CyclesPrincipledBsdf {
   // diffuse or SSS
   bool enable_diffuse   = false;
   float3 diffuse_weight = float3(0.f);
+
+  bool enable_subsurface   = false;
+  float3 subsurface_weight = float3(0.f);
+  float3 subsurface_albedo = float3(0.f);
+  float3 subsurface_radius = float3(0.f);
 
   // specular
   bool enable_specular   = false;
@@ -32,6 +38,7 @@ struct CyclesPrincipledBsdf {
 
 struct CyclesSampleWeight {
   float diffuse_sample_weight;
+  float subsurface_sample_weight;
   float specular_sample_weight;
 };
 
@@ -51,6 +58,9 @@ static CyclesSampleWeight FetchClosureSampleWeight(
   ret.diffuse_sample_weight =
       bsdf.enable_diffuse ? RgbToY(bsdf.diffuse_weight) : 0.f;
 
+  ret.subsurface_sample_weight =
+      bsdf.enable_subsurface ? RgbToY(bsdf.subsurface_weight) : 0.f;
+
   ret.specular_sample_weight =
       bsdf.enable_specular
           ? RgbToY(bsdf.specular_weight *
@@ -62,16 +72,19 @@ static CyclesSampleWeight FetchClosureSampleWeight(
   {  // normalize
     float sum = 0.0f;
     sum += ret.diffuse_sample_weight;
+    sum += ret.subsurface_sample_weight;
     sum += ret.specular_sample_weight;
 
     ret.diffuse_sample_weight /= sum;
+    ret.subsurface_sample_weight /= sum;
     ret.specular_sample_weight /= sum;
 
     if (!std::isfinite(ret.diffuse_sample_weight))
       ret.diffuse_sample_weight = 0.f;
-    if (!std::isfinite(ret.specular_sample_weight)) {
+    if (!std::isfinite(ret.subsurface_sample_weight))
+      ret.subsurface_sample_weight = 0.f;
+    if (!std::isfinite(ret.specular_sample_weight))
       ret.specular_sample_weight = 0.f;
-    }
   }
   return ret;
 }
@@ -105,12 +118,28 @@ static void EvalBsdf(const float3& omega_in, const float3& omega_out,
   }
 }
 
-static void SampleBsdf(const float3& omega_out,
+/**
+ *@param[in] scene scene
+ *@param[in] omega_out omega_out
+ *@param[in] bsdf cycles principled bsdf
+ *@param[in] rng random generator
+ *@param[in,out] surface_info surface information
+ *@param[in,out] Rgl Rotation matrix global to local
+ *@param[out] omega_in omega_in
+ *@param[out] bsdf_f bsdf_f
+ *@param[out] contribute contribute
+ *@param[out] pdf pdf
+ */
+static void SampleBsdf(const Scene& scene, const float3& omega_out,
                        const CyclesPrincipledBsdf& bsdf, const RNG& rng,
-                       float3* omega_in, float3* bsdf_f, float* pdf) {
+                       SurfaceInfo* surface_info, float Rgl[4][4],
+                       float3* omega_in, float3* bsdf_f, float3* contribute,
+                       float* pdf) {
+  *contribute = float3(0.f);
+
   const auto w = FetchClosureSampleWeight(omega_out, bsdf);
 
-  float select_closure = rng.Draw();
+  const float select_closure = rng.Draw();
 
   // Sample Bsdf
   if (select_closure < w.diffuse_sample_weight) {
@@ -119,12 +148,47 @@ static void SampleBsdf(const float3& omega_out,
     const float _brdf_f =
         LambertBrdfSample(omega_out, u_lambert, omega_in, &_pdf);
     (void)_brdf_f;  // TODO
+  } else if (select_closure <
+             w.diffuse_sample_weight + w.subsurface_sample_weight) {
+    float3 new_omega_out;
+    float3 sss_throuput;
+    int scatter_bounce;
+    const bool success = random_walk_sss::RandomWalkSubsurface(
+        scene, bsdf.subsurface_weight, bsdf.subsurface_albedo,
+        bsdf.subsurface_radius, rng, surface_info, Rgl, &new_omega_out,
+        &sss_throuput, &scatter_bounce);
+
+    if (success) {
+      CyclesPrincipledBsdf new_bsdf;
+      new_bsdf.enable_diffuse = true;
+      new_bsdf.diffuse_weight = sss_throuput;
+
+      {
+        const float3& normal = surface_info->normal_s;
+        const float3 d       = DirectIllumination(
+            scene, new_omega_out, *surface_info, Rgl, normal, rng,
+            [&new_bsdf](const float3& omega_in_, const float3& omega_out_,
+                        float3* bsdf_f_, float* pdf_) {
+              EvalBsdf(omega_in_, omega_out_, new_bsdf, bsdf_f_, pdf_);
+            });
+        (*contribute) = d;
+      }
+      float3 dummy_contrib;
+      SampleBsdf(scene, new_omega_out, new_bsdf, rng, surface_info, Rgl,
+                 omega_in, bsdf_f, &dummy_contrib, pdf);
+      return;
+    }
+    *omega_in = 0.f;
+    *bsdf_f   = 0.f;
+    *pdf      = 0.f;
+    return;
   } else {
     const std::array<float, 2> u_specular = {rng.Draw(), rng.Draw()};
     float _pdf                            = 0.f;  // TODO
-    const float _brdf_f                   = MicrofacetGGXSample(
-        omega_out, bsdf.alpha_x, bsdf.alpha_y, u_specular, /*refractive*/ false,
-        /*distrib*/ 2, omega_in, &_pdf);
+    const float _brdf_f =
+        MicrofacetGGXSample(omega_out, bsdf.alpha_x, bsdf.alpha_y, u_specular,
+                            /*refractive*/ false,
+                            /*distrib*/ 2, omega_in, &_pdf);
     (void)_brdf_f;  // TODO
   }
 
@@ -221,16 +285,30 @@ static CyclesPrincipledBsdf ParamToBsdf(
 
     bsdf.enable_diffuse = false;
     if (Average(mixed_ss_base_color) > kClosureWeightCutOff) {
-      bsdf.enable_diffuse = true;
       if (subsurface < kClosureWeightCutOff &&
           _diffuse_weight > kClosureWeightCutOff) {
+        bsdf.enable_diffuse = true;
         bsdf.diffuse_weight = weight * base_color * _diffuse_weight;
         // TODO roughness (use principled diffuse)
-      } else {
+      } else if (subsurface > kClosureWeightCutOff /* TODO && _diffuse_weight > kClosureWeightCutOff ? */) {
+        bsdf.enable_subsurface = true;
         const float3 subsurf_weight =
             weight * mixed_ss_base_color * _diffuse_weight;
-        (void)subsurface;
-        // TODO subsurface
+
+        bsdf.subsurface_weight = subsurf_weight;
+        bsdf.subsurface_albedo = mixed_ss_base_color;
+        bsdf.subsurface_radius = subsurface_radius * subsurface;
+        float3 add_diffuse_weight(0.f);
+
+        random_walk_sss::BssrdfSetup(
+            /*burey_radius*/ true, /*scale_mfp*/ true, /*use_eq5*/ true,
+            &(bsdf.subsurface_weight), &(bsdf.subsurface_albedo),
+            &(bsdf.subsurface_radius), &add_diffuse_weight);
+
+        if (!IsBlack(add_diffuse_weight)) {
+          bsdf.enable_diffuse = true;
+          bsdf.diffuse_weight = bsdf.diffuse_weight + add_diffuse_weight;
+        }
       }
     }
   }
@@ -269,21 +347,21 @@ static CyclesPrincipledBsdf ParamToBsdf(
 CyclesPrincipledBsdf ParamToBsdf(const CyclesPrincipledBsdfParameter& m_param);
 
 void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
-                            const SurfaceInfo& surface_info, const RNG& rng,
-                            float3* next_ray_org, float3* next_ray_dir,
-                            float3* throuput, float3* contribute, float* pdf) {
-  if (surface_info.face_direction == SurfaceInfo::kAmbiguous) {
-    *next_ray_org = surface_info.global_position;
-    *next_ray_dir = global_omega_out;
-    *throuput     = float3(0.0f);
-    *contribute   = float3(0.0f);
-    *pdf          = 0.0f;
+                            const RNG& rng, SurfaceInfo* surface_info,
+                            float3* global_omega_in, float3* throuput,
+                            float3* contribute, float* pdf) {
+  if (surface_info->face_direction == SurfaceInfo::kAmbiguous) {
+    *global_omega_in = global_omega_out;
+    *throuput        = float3(0.0f);
+    *contribute      = float3(0.0f);
+    *pdf             = 0.0f;
+    return;
   }
 
   // TODO tangent, binormal
-  const float3 ez = (surface_info.face_direction == SurfaceInfo::kFront)
-                        ? surface_info.normal_s
-                        : -surface_info.normal_s;
+  const float3 ez = (surface_info->face_direction == SurfaceInfo::kFront)
+                        ? surface_info->normal_s
+                        : -surface_info->normal_s;
 
   float3 ex, ey;
   BranchlessONB(ez, &ex, &ey);
@@ -302,14 +380,15 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   assert(std::abs(omega_out[2] - vdot(global_omega_out, ez)) < kEps);
 
   const CyclesPrincipledBsdfParameter* m_param =
-      mpark::get_if<CyclesPrincipledBsdfParameter>(surface_info.material_param);
+      mpark::get_if<CyclesPrincipledBsdfParameter>(
+          surface_info->material_param);
 
   const CyclesPrincipledBsdf bsdf = ParamToBsdf(*m_param);
 
   *contribute = float3(0.f);
   {
     const float3 d = DirectIllumination(
-        scene, omega_out, surface_info, Rgl, ez, rng,
+        scene, omega_out, *surface_info, Rgl, ez, rng,
         [&bsdf](const float3& omega_in_, const float3& omega_out_,
                 float3* bsdf_f_, float* pdf_) {
           EvalBsdf(omega_in_, omega_out_, bsdf, bsdf_f_, pdf_);
@@ -318,21 +397,22 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   }
 
   // Sample Bsdf
-  float3 omega_in(0.f), bsdf_f(0.f);
+  float3 omega_in(0.f), bsdf_f(0.f), _contrib(0.f);
   float ret_pdf = 0.f;
-  SampleBsdf(omega_out, bsdf, rng, &omega_in, &bsdf_f, &ret_pdf);
+  SampleBsdf(scene, omega_out, bsdf, rng, surface_info, Rgl, &omega_in, &bsdf_f,
+             &_contrib, &ret_pdf);
 
-  const auto cos_i = omega_in[2];
+  *contribute = (*contribute) + _contrib;
 
   auto& Rlg = Rgl;
   ShadingLocalToGlobal(ex, ey, ez, Rlg);  // local to global
-  Matrix::MultV(omega_in.v, Rlg, next_ray_dir->v);
+  Matrix::MultV(omega_in.v, Rlg, global_omega_in->v);
 
-  assert(std::abs(vdot(*next_ray_dir, ez) - omega_in[2]) < kEps);
+  assert(std::abs(vdot(*global_omega_in, ez) - omega_in[2]) < kEps);
 
-  *next_ray_org = surface_info.global_position;
-  *throuput     = bsdf_f * cos_i / ret_pdf;
-  *pdf          = ret_pdf;  // pdf of bsdf sampling
+  const auto cos_i = omega_in[2];
+  *throuput        = bsdf_f * cos_i / ret_pdf;
+  *pdf             = ret_pdf;  // pdf of bsdf sampling
 
   assert(*pdf < std::numeric_limits<float>::epsilon() || IsFinite(*throuput));
 
