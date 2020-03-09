@@ -34,6 +34,46 @@ $ cd build
 $ make
 ```
 
+## TODO
+
+* [ ] Interactive GUI
+  * [x] Draw rendering
+  * [ ] ImGui UI
+* [ ] Curve Mesh
+  * [ ] CyHair loader
+  * [ ] xpd loader
+* [ ] Cycles's Principled Bsdf
+  * [x] Lambert
+  * [ ] Principled diffuse
+  * [x] Subsurface
+    * [ ] BSSRDF
+    * [x] Random walk SSS
+      * [ ] Henyey Greenstein
+      * [ ] single instance intersect
+  * [ ] Microfacet
+    * [x] reflection
+    * [ ] clearcoat
+    * [ ] refraction
+  * [ ] sheen
+* [ ] Arnold Standard Shader
+* [ ] Principled Hair Bsdf
+* [ ] config file
+* [ ] Scene file
+  * [ ] json
+  * [x] obj
+  * [ ] gltf
+* [ ] Texture
+* [ ] Light
+  * [x] Area light
+  * [ ] Point light
+  * [ ] Directional light
+  * [ ] IBL
+* Camera
+  * [x] Pinhole camera
+  * [ ] Thin lens camera
+  * [ ] realistic camera
+
+
 ## License
 
 pbrlab is licensed under MIT license.
