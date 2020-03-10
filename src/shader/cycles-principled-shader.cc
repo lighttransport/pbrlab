@@ -34,12 +34,21 @@ struct CyclesPrincipledBsdf {
   float alpha_y          = 1.f;
   float ior              = 1.5f;
   float3 specular_color  = float3(0.f);
+
+  // clearcoat
+  bool enable_clearcoat   = false;
+  float3 clearcoat_weight = float3(0.f);
+  float clearcoat_alpha_x = 1.f;
+  float clearcoat_alpha_y = 1.f;
+  float clearcoat_ior     = 1.5f;
+  float3 clearcoat_color  = float3(0.0f);
 };
 
 struct CyclesSampleWeight {
   float diffuse_sample_weight;
   float subsurface_sample_weight;
   float specular_sample_weight;
+  float clearcoat_sample_weight;
 };
 
 static float3 SpecularColor(const float3& omega_in, const float3& omega_out,
@@ -69,15 +78,26 @@ static CyclesSampleWeight FetchClosureSampleWeight(
                                  omega_out, bsdf.specular_color, bsdf.ior))
           : 0.f;
 
+  ret.clearcoat_sample_weight =
+      bsdf.enable_clearcoat
+          ? RgbToY(bsdf.clearcoat_weight *
+                   SpecularColor(float3(-omega_out[0], -omega_out[1],
+                                        omega_out[2]) /*half vector is normal*/,
+                                 omega_out, bsdf.clearcoat_color,
+                                 bsdf.clearcoat_ior))
+          : 0.f;
+
   {  // normalize
     float sum = 0.0f;
     sum += ret.diffuse_sample_weight;
     sum += ret.subsurface_sample_weight;
     sum += ret.specular_sample_weight;
+    sum += ret.clearcoat_sample_weight;
 
     ret.diffuse_sample_weight /= sum;
     ret.subsurface_sample_weight /= sum;
     ret.specular_sample_weight /= sum;
+    ret.clearcoat_sample_weight /= sum;
 
     if (!std::isfinite(ret.diffuse_sample_weight))
       ret.diffuse_sample_weight = 0.f;
@@ -85,6 +105,8 @@ static CyclesSampleWeight FetchClosureSampleWeight(
       ret.subsurface_sample_weight = 0.f;
     if (!std::isfinite(ret.specular_sample_weight))
       ret.specular_sample_weight = 0.f;
+    if (!std::isfinite(ret.clearcoat_sample_weight))
+      ret.clearcoat_sample_weight = 0.f;
   }
   return ret;
 }
@@ -115,6 +137,20 @@ static void EvalBsdf(const float3& omega_in, const float3& omega_out,
         SpecularColor(omega_in, omega_out, bsdf.specular_color, bsdf.ior) *
         _brdf_f;
     *pdf += w.specular_sample_weight * _pdf;
+  }
+
+  if (bsdf.enable_clearcoat) {  // clearcoat
+    float _pdf = 0.f;
+    const float _brdf_f =
+        MicrofacetGGXBsdfPdf(omega_in, omega_out, bsdf.clearcoat_alpha_x,
+                             bsdf.clearcoat_alpha_y, /*distrib =*/1, &_pdf);
+
+    // Calc fresnel
+    *bsdf_f += bsdf.clearcoat_weight *
+               SpecularColor(omega_in, omega_out, bsdf.clearcoat_color,
+                             bsdf.clearcoat_ior) *
+               _brdf_f;
+    *pdf += w.clearcoat_sample_weight * _pdf;
   }
 }
 
@@ -182,13 +218,23 @@ static void SampleBsdf(const Scene& scene, const float3& omega_out,
     *bsdf_f   = 0.f;
     *pdf      = 0.f;
     return;
-  } else {
+  } else if (select_closure < w.diffuse_sample_weight +
+                                  w.subsurface_sample_weight +
+                                  w.specular_sample_weight) {
     const std::array<float, 2> u_specular = {rng.Draw(), rng.Draw()};
     float _pdf                            = 0.f;  // TODO
     const float _brdf_f =
         MicrofacetGGXSample(omega_out, bsdf.alpha_x, bsdf.alpha_y, u_specular,
                             /*refractive*/ false,
                             /*distrib*/ 2, omega_in, &_pdf);
+    (void)_brdf_f;  // TODO
+  } else {
+    const std::array<float, 2> u_specular = {rng.Draw(), rng.Draw()};
+    float _pdf                            = 0.f;  // TODO
+    const float _brdf_f                   = MicrofacetGGXSample(
+        omega_out, bsdf.clearcoat_alpha_x, bsdf.clearcoat_alpha_y, u_specular,
+        /*refractive*/ false,
+        /*distrib*/ 1, omega_in, &_pdf);
     (void)_brdf_f;  // TODO
   }
 
@@ -260,7 +306,7 @@ static CyclesPrincipledBsdf ParamToBsdf(
   const float& sheen_tint = m_param.sheen_tint;  // TODO
 
   const float& clearcoat           = m_param.clearcoat;
-  const float& clearcoat_roughness = m_param.clearcoat;
+  const float& clearcoat_roughness = m_param.clearcoat_roughness;
   const float& ior                 = m_param.ior;
 
   const float& transmission           = m_param.transmission;
@@ -340,6 +386,21 @@ static CyclesPrincipledBsdf ParamToBsdf(
     const float3 rho_specular = Lerp(float3(1.0f), rho_tint, specular_tint);
     bsdf.specular_color =
         Lerp(0.08f * specular * rho_specular, base_color, metallic);
+  }
+
+  /* clearcoat */
+  bsdf.enable_clearcoat = false;
+  if (clearcoat > kClosureWeightCutOff) {
+    bsdf.enable_clearcoat = true;
+
+    bsdf.clearcoat_weight = float3(0.25f * clearcoat);
+
+    bsdf.clearcoat_alpha_x = clearcoat_roughness * clearcoat_roughness;
+    bsdf.clearcoat_alpha_y = clearcoat_roughness * clearcoat_roughness;
+
+    bsdf.clearcoat_color = float3(0.04f);
+
+    bsdf.clearcoat_ior = 1.5f;
   }
 
   return bsdf;

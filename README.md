@@ -73,6 +73,10 @@ $ make
   * [ ] Thin lens camera
   * [ ] realistic camera
 
+## FIXME
+* [ ] Random walk SSS -> Differs from Cycles results
+* [ ] clearcoat -> Clearcoat component is too small
+
 
 ## License
 

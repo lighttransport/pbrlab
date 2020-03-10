@@ -172,8 +172,8 @@ inline float MicrofacetGGXBsdfPdf(const float3& omega_in,
 
   if (cos_n_o > 0 && cos_n_i > 0) {  // reflection
     /* half vector*/                 // TODO rename
-    const float3 m     = vnormalized(omega_in + omega_out);
-    const float alpha2 = alpha_x * alpha_y;
+    const float3 m = vnormalized(omega_in + omega_out);
+    float alpha2   = alpha_x * alpha_y;
     float D = 0.f, G1o = 0.f, G1i = 0.f;
 
     if (std::fabs(alpha_x - alpha_y) <
@@ -182,7 +182,8 @@ inline float MicrofacetGGXBsdfPdf(const float3& omega_in,
        * eq. 20: (F*G*D)/(4*in*on)
        * eq. 33: first we calculate D(m) */
       if (distrib == 1) {  // GTR
-        D = D_GTR1(m, alpha_x);
+        D      = D_GTR1(m, alpha_x);
+        alpha2 = 0.0625f;
       } else {  // GTR2
         D = D_GTR2(m, alpha2);
       }

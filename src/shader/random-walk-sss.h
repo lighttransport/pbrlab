@@ -277,7 +277,7 @@ inline bool RandomWalkSubsurface(const Scene& scene,
   ray.min_t   = 1e-3f;
   ray.max_t   = kInf;
 
-  const uint32_t max_subsuface_bounces = 128;
+  const uint32_t max_subsuface_bounces = 8192;
 
   TraceResult trace_result;
   bool hit = false;  // TODO
