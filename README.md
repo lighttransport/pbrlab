@@ -103,5 +103,7 @@ The following files are derived from these;
 * mpark variant : BSD-1 license.
 * Embree-aarch64 : Apache-2.0
 * pcg-random : Apache-2.0
+* pbrt : BSD-2 license.
 * Cycles : Apache 2.0 license
 * OpenShadingLanguage : BSD-3 license. 
+* OpenImageIO : BSD-3 license
