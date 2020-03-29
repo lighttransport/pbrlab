@@ -1,4 +1,5 @@
 set(PBRLAB_SOURCES
+    curve-util.cc
     image-utils.cc
     light-manager.cc
     matrix.cc
@@ -6,6 +7,8 @@ set(PBRLAB_SOURCES
     render-layer.cc
     render-tile.cc
     scene.cc
+    io/curve-mesh-io.cc
+    io/cyhair.cc
     io/image-io.cc
     io/stb_image.cc
     io/stb_image_write.cc
@@ -13,6 +16,7 @@ set(PBRLAB_SOURCES
     io/tiny_obj_loader.cc
     io/triangle-mesh-io.cc
     mesh/triangle-mesh.cc
+    mesh/cubic-bezier-curve-mesh.cc
     raytracer/raytracer.cc
     raytracer/raytracer_impl.cc
     shader/cycles-principled-shader.cc

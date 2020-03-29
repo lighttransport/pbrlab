@@ -36,6 +36,8 @@ $ make
 
 ## TODO
 
+* [ ] Log
+  * [ ] nanolog
 * [ ] Interactive GUI
   * [x] Draw rendering
   * [ ] ImGui UI

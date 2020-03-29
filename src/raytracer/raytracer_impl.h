@@ -28,6 +28,12 @@ public:
                                uint32_t* instance_id, uint32_t* local_scene_id,
                                uint32_t* local_geom_id);
 
+  void RegisterNewCubicBezierCurveMesh(
+      const float* vertices_thickness, const uint32_t num_vertices,
+      const uint32_t* indices, const uint32_t num_segments,
+      const float transform[4][4], uint32_t* instance_id,
+      uint32_t* local_scene_id, uint32_t* local_geom_id);
+
   bool GetSceneAABB(float* bmin, float* bmax) const;
 
   TraceResult FirstHitTrace1(const float* ray_org, const float* ray_dir,
@@ -45,6 +51,7 @@ private:
   std::vector<LocalScene> local_scenes_;
 
   std::vector<TriangleMesh> triangle_meshes_;
+  std::vector<CubicBezierCurveMesh> cubic_bezier_curve_meshes_;
 
   uint32_t create_instance_counter_ = 0;
 };

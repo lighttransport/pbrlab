@@ -146,6 +146,57 @@ void Raytracer::Impl::RegisterNewTriangleMesh(
   rtcCommitScene(embree_global_scene_);
 }
 
+void Raytracer::Impl::RegisterNewCubicBezierCurveMesh(
+    const float* vertices_thickness, const uint32_t num_vertices,
+    const uint32_t* indices, const uint32_t num_segments,
+    const float transform[4][4], uint32_t* instance_id,
+    uint32_t* local_scene_id, uint32_t* local_geom_id) {
+  RTCGeometry geom =
+      rtcNewGeometry(embree_device_, RTC_GEOMETRY_TYPE_FLAT_BEZIER_CURVE);
+
+  const uint32_t cubic_bezier_curve_mesh_id =
+      static_cast<uint32_t>(cubic_bezier_curve_meshes_.size());
+
+  cubic_bezier_curve_meshes_.emplace_back();
+  CubicBezierCurveMesh& cubic_bezier_curve_mesh =
+      cubic_bezier_curve_meshes_.back();
+  cubic_bezier_curve_mesh.num_vertices = num_vertices;
+  cubic_bezier_curve_mesh.num_segments = num_segments;
+
+  cubic_bezier_curve_mesh.vertices_thickness = vertices_thickness;
+
+  rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT4,
+                             cubic_bezier_curve_mesh.vertices_thickness, 0,
+                             sizeof(float) * 4, num_vertices);
+
+  cubic_bezier_curve_mesh.indices = indices;
+  rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT,
+                             indices, 0, sizeof(uint32_t), num_segments);
+
+  rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
+  rtcCommitGeometry(geom);
+
+  std::vector<RTCGeometry> v_geom = {geom};
+
+  RTCScene local_scene = CreateNewLocalScene(embree_device_, v_geom);
+  rtcReleaseGeometry(geom);
+
+  *local_scene_id = static_cast<uint32_t>(local_scenes_.size());
+  local_scenes_.emplace_back();
+  local_scenes_.back().embree_scene = local_scene;
+  *local_geom_id                    = 0u;
+  local_scenes_.back().mesh_data_ids.emplace_back(kCubicBezierCurveMesh,
+                                                  cubic_bezier_curve_mesh_id);
+
+  *instance_id = CreateInstanceFromLocalScene(*local_scene_id, transform);
+
+  cubic_bezier_curve_mesh.embree_local_scene_id = *local_scene_id;
+  cubic_bezier_curve_mesh.embree_local_geom_id  = *local_geom_id;
+
+  // TODO later
+  rtcCommitScene(embree_global_scene_);
+}
+
 bool Raytracer::Impl::GetSceneAABB(float* bmin, float* bmax) const {
   if (embree_global_scene_ == nullptr) return false;
   RTCBounds rtc_bounds;

@@ -18,6 +18,14 @@ struct TriangleMesh : Mesh {
   uint32_t num_faces    = 0;
 };
 
+struct CubicBezierCurveMesh : Mesh {
+  const float* vertices_thickness = nullptr;  // 4(xyz+thickness) * num vertices
+  const uint32_t* indices         = nullptr;  // num_segments
+
+  uint32_t num_vertices = 0;
+  uint32_t num_segments = 0;
+};
+
 }  // namespace raytracer
 }  // namespace pbrlab
 #endif  // PBRLAB_RAYTRACER_MESH_H_
