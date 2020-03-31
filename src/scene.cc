@@ -34,26 +34,7 @@ void Scene::CommitScene(void) {
 uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
   MeshInstance instance;
 
-  // Mesh
-  const std::shared_ptr<TriangleMesh> triangle_mesh =
-      mpark::get<kTriangleMesh>(mesh_ptr);
-  instance.meshes.emplace_back(mesh_ptr);
-
-  // Material
-  // TODO specify material ids
-  instance.material_ids.emplace_back(triangle_mesh.get()->GetMaterials());
-
-  // Light
-  { instance.light_param_ids.emplace_back(); }
-
-  // BVH
-  const std::vector<float>& vertices      = triangle_mesh.get()->GetVertices();
-  const std::vector<uint32_t>& vertex_ids = triangle_mesh.get()->GetVertexIds();
-
-  const uint32_t num_vertices = triangle_mesh.get()->GetNumVertices();
-  const uint32_t num_faces    = triangle_mesh.get()->GetNumFaces();
-
-  // TODO transform
+  // Transform TODO
   const float tranform[4][4] = {{1.0f, 0.0f, 0.0f, 0.0f},
                                 {0.0f, 1.0f, 0.0f, 0.0f},
                                 {0.0f, 0.0f, 1.0f, 0.0f},
@@ -63,10 +44,60 @@ uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
   Matrix::Copy(tranform, instance.transform_gl);
   Matrix::Inverse(instance.transform_gl);  // [NOTE] global to local
 
-  uint32_t instance_id, local_scene_id, local_geom_id;
-  raytracer_.RegisterNewTriangleMesh(
-      vertices.data(), num_vertices, vertex_ids.data(), num_faces, tranform,
-      &instance_id, &local_scene_id, &local_geom_id);
+  uint32_t instance_id = uint32_t(-1), local_scene_id = uint32_t(-1),
+           local_geom_id = uint32_t(-1);
+
+  // Mesh
+  if (mesh_ptr.index() == kTriangleMesh) {
+    // Triangle Mesh
+    const std::shared_ptr<TriangleMesh> triangle_mesh =
+        mpark::get<kTriangleMesh>(mesh_ptr);
+    instance.meshes.emplace_back(mesh_ptr);
+
+    // Material
+    // TODO specify material ids
+    instance.material_ids.emplace_back(triangle_mesh.get()->GetMaterials());
+
+    // Light
+    { instance.light_param_ids.emplace_back(); }
+
+    // BVH
+    const std::vector<float>& vertices = triangle_mesh.get()->GetVertices();
+    const std::vector<uint32_t>& vertex_ids =
+        triangle_mesh.get()->GetVertexIds();
+
+    const uint32_t num_vertices = triangle_mesh.get()->GetNumVertices();
+    const uint32_t num_faces    = triangle_mesh.get()->GetNumFaces();
+
+    raytracer_.RegisterNewTriangleMesh(
+        vertices.data(), num_vertices, vertex_ids.data(), num_faces, tranform,
+        &instance_id, &local_scene_id, &local_geom_id);
+  } else if (mesh_ptr.index() == kCubicBezierCurveMesh) {
+    // Cubic Bezier Curve Mesh
+    const std::shared_ptr<CubicBezierCurveMesh> curve_mesh =
+        mpark::get<kCubicBezierCurveMesh>(mesh_ptr);
+    instance.meshes.emplace_back(mesh_ptr);
+
+    // Materilal
+    // TODO specify material ids
+    instance.material_ids.emplace_back(curve_mesh->GetMaterials());
+
+    // Light
+    { instance.light_param_ids.emplace_back(); }
+
+    const std::vector<float>& vertices   = curve_mesh->GetVertices();
+    const std::vector<uint32_t>& indices = curve_mesh->GetIndices();
+
+    // BVH
+    const uint32_t num_vertices = curve_mesh->GetNumVertices();
+    const uint32_t num_indices  = curve_mesh->GetNumSegments();
+
+    raytracer_.RegisterNewCubicBezierCurveMesh(
+        vertices.data(), num_vertices, indices.data(), num_indices, tranform,
+        &instance_id, &local_scene_id, &local_geom_id);
+  } else {
+    (void)local_scene_id;
+  }
 
   // Register Instance
   // TODO : local_scene_id, local_geom_id
@@ -91,6 +122,10 @@ const MaterialParameter* Scene::FetchMeshMaterialParamPtr(
   const std::vector<uint32_t>& material_ids =
       instance.material_ids[trace_result.geom_id];
 
+  if (material_ids[trace_result.prim_id] == uint32_t(-1)) {
+    return nullptr;
+  }
+
 #ifdef NDEBUG
   return &(material_params_[material_ids[trace_result.prim_id]]);
 #else
@@ -110,6 +145,8 @@ float3 Scene::FetchMeshShadingNormal(const TraceResult& trace_result) const {
     // TODO transform
     ret = mpark::get<kTriangleMesh>(mesh_p)->FetchShadingNormal(
         trace_result.prim_id, trace_result.u, trace_result.v);
+  } else if (mesh_p.index() == kCubicBezierCurveMesh) {
+    ret = float3(trace_result.normal_g);
   } else {
     assert(false);
   }

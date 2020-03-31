@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "mesh/cubic-bezier-curve-mesh.h"
 #include "mesh/triangle-mesh.h"
 
 #ifdef __clang__
@@ -18,8 +19,9 @@
 
 namespace pbrlab {
 
-enum MeshType { kTriangleMesh = 0, kMeshNone };
-using MeshPtr = mpark ::variant<std::shared_ptr<TriangleMesh>>;
+enum MeshType { kTriangleMesh = 0, kCubicBezierCurveMesh, kMeshNone };
+using MeshPtr = mpark ::variant<std::shared_ptr<TriangleMesh>,
+                                std::shared_ptr<CubicBezierCurveMesh>>;
 
 struct MeshInstance {
   std::vector<MeshPtr> meshes;

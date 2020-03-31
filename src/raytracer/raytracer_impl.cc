@@ -166,8 +166,8 @@ void Raytracer::Impl::RegisterNewCubicBezierCurveMesh(
   cubic_bezier_curve_mesh.vertices_thickness = vertices_thickness;
 
   rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT4,
-                             cubic_bezier_curve_mesh.vertices_thickness, 0,
-                             sizeof(float) * 4, num_vertices);
+                             vertices_thickness, 0, sizeof(float) * 4,
+                             num_vertices);
 
   cubic_bezier_curve_mesh.indices = indices;
   rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT,

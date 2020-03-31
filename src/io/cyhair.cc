@@ -91,12 +91,6 @@ bool CyHair::Load(const std::string &filepath) {
       fclose(fp);
       return false;
     }
-
-    // print thickness of the first strand.
-    size_t n = segments_[1];
-    for (size_t i = 0; i < n; i++) {
-      // LOG_INFO("[CyHair] thickness[{}] = {}", i, thicknesses_[i]);
-    }
   }
 
   if (has_transparency) {
@@ -172,7 +166,11 @@ bool LoadCyHair(const std::string &filepath, const bool is_y_up,
         _vertices.emplace_back(cyhair.points_.at((offset + v_id) * 3 + 1));
       }
 
-      _thicknesses.emplace_back(cyhair.thicknesses_.at(offset + v_id));
+      const float thickness = cyhair.thicknesses_.empty()
+                                  ? cyhair.default_thickness_
+                                  : cyhair.thicknesses_.at(offset + v_id);
+
+      _thicknesses.emplace_back(thickness);
     }
 
     offset += num_vertices;

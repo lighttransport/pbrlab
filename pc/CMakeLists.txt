@@ -58,7 +58,8 @@ foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
     $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 
   target_link_libraries(${EXECUTABLE_TARGET} PRIVATE
-    ${PROJECT_NAME})
+    ${PROJECT_NAME}
+    mpark_variant)
 
   if (PBRLAB_USE_STACK_TRACE_LOGGER)
     target_compile_definitions(${EXECUTABLE_TARGET}

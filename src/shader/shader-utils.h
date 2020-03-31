@@ -1,6 +1,7 @@
 #ifndef PBRLAB_SHADER_UTILS_H_
 #define PBRLAB_SHADER_UTILS_H_
 #include <math.h>
+
 #include <functional>
 
 #include "material-param.h"

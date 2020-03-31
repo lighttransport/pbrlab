@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   const std::string obj_filename = std::string(argv[1]);
 
   pbrlab::Scene scene;
-  if (!CreateScene(obj_filename, &scene)) {
+  if (!CreateScene(argc, argv, &scene)) {
     return EXIT_FAILURE;
   }
 

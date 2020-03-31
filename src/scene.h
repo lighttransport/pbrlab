@@ -18,7 +18,16 @@ public:
   template <class... Args>
   MeshPtr AddTriangleMesh(Args&&... args) {
     triangle_meshes_.emplace_back(std::make_shared<TriangleMesh>(args...));
-    return triangle_meshes_.back();
+    MeshPtr ret = triangle_meshes_.back();
+    return ret;
+  }
+
+  template <class... Args>
+  MeshPtr AddCubicBezierCurveMesh(Args&&... args) {
+    cubic_bezier_curve_meshes_.emplace_back(
+        std::make_shared<CubicBezierCurveMesh>(args...));
+    MeshPtr ret = cubic_bezier_curve_meshes_.back();
+    return ret;
   }
 
   template <class... Args>
@@ -61,6 +70,8 @@ private:
   std::vector<MeshInstance> instances_;
 
   std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes_;
+
+  std::vector<std::shared_ptr<CubicBezierCurveMesh>> cubic_bezier_curve_meshes_;
 
   std::vector<MaterialParameter> material_params_;
 
