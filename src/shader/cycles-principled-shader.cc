@@ -266,7 +266,7 @@ static CyclesPrincipledBsdf ParamToBsdf(
   //
   // clearcoat                       [0,1]
   // clearcoat_roughness             [0,1]
-  // ior                             [0,1]
+  // ior                             float
   //
   // transmission                    [0,1]
   // transmission_roughness          [0,1]^3
@@ -405,7 +405,6 @@ static CyclesPrincipledBsdf ParamToBsdf(
 
   return bsdf;
 }
-CyclesPrincipledBsdf ParamToBsdf(const CyclesPrincipledBsdfParameter& m_param);
 
 void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
                             const RNG& rng, SurfaceInfo* surface_info,

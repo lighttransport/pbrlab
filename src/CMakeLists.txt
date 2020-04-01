@@ -20,6 +20,7 @@ set(PBRLAB_SOURCES
     raytracer/raytracer.cc
     raytracer/raytracer_impl.cc
     shader/cycles-principled-shader.cc
+    shader/hair-shader.cc
     shader/shader.cc
    )
 

@@ -43,7 +43,7 @@ inline float SafeASin(const float x) {
   const float ret = MY_ASIN(x);
   if (std::isnan(ret)) {
     std::cerr << "asin warning x = " << x << std::endl;
-    return MY_ASIN(Clamp(x, -1.0, 1.0));
+    return MY_ASIN(Clamp(x, -1.0f, 1.0f));
   }
   return ret;
 }
@@ -201,16 +201,6 @@ inline float Mp(const float sin_theta_i, const float cos_theta_i,
   return ret;
 }
 
-inline std::array<float, 4> BetamToV(const float beta_m) {
-  std::array<float, 4> vs;
-  vs[0] = Sqr(0.726f * beta_m + 0.812f * Sqr(beta_m) + 3.7f * Pow<20>(beta_m));
-  vs[1] = 0.25f * vs[0];
-  vs[2] = 4.0f * vs[0];
-  vs[3] = vs[2];
-
-  return vs;
-}
-
 // TODO to closure-util.h
 inline float FrDielectric(float cos_theta_i, float eta_i, float eta_t) {
   cos_theta_i   = Clamp(cos_theta_i, -1.0f, 1.0f);
@@ -298,81 +288,15 @@ inline float Np(const float phi, const int p, const float s,
   return TrimmedLogistic(dphi, s, -kPi, kPi);
 }
 
-inline float CalcS(const float beta_n) {
-  const float beta_n2 = Sqr(beta_n);
-  return std::sqrt(kPi / 8.0f) *
-         (0.265f * beta_n + 1.194f * beta_n2 + 5.372f * Pow<11>(beta_n2));
-}
-
 inline float AbsCosTheta(const float3 &omega) {
   return std::sqrt(omega[2] * omega[2] + omega[1] * omega[1]);
 }
 
-// TODO shader
-inline float3 CalcSigmaAUsingMelaninParameter(float melanin,
-                                              float melaninredness) {
-  melanin        = Clamp(melanin, 0.0f, 1.0f);
-  melaninredness = Clamp(melaninredness, 0.0f, 1.0f);
-
-  melanin = -MY_LOG(std::max(1.0f - melanin, 0.0001f));
-
-  const float eumelanin   = melanin * (1.0f - melaninredness);
-  const float pheomelanin = melanin * melaninredness;
-
-  return float3(std::max(0.0f, eumelanin * 0.506f + pheomelanin * 0.343f),
-                std::max(0.0f, eumelanin * 0.841f + pheomelanin * 0.733f),
-                std::max(0.0f, eumelanin * 1.653f + pheomelanin * 1.924f));
-}
-
-inline float3 CalcSigmaAFromConcentration(const float eumelanin,
-                                          const float pheomelanin) {
-  float3 eumelaninSigmaA(0.419f, 0.697f, 1.37f);
-  float3 pheomelaninSigmaA(0.187f, 0.4f, 1.05f);
-
-  return eumelanin * eumelaninSigmaA + pheomelanin * pheomelaninSigmaA;
-}
-
-inline float3 CalcSigmaAFromRGB(const float3 &c, const float beta_n) {
-  float3 ret;
-
-  for (int i = 0; i < 3; i++) {
-    ret[i] =
-        Sqr(MY_LOG(c[i]) / (5.969f - 0.215f * beta_n + 2.532f * Sqr(beta_n) -
-                            10.73f * Pow<3>(beta_n) + 5.574f * Pow<4>(beta_n) +
-                            0.245f * Pow<5>(beta_n)));
-  }
-
-  return ret;
-}
-
-inline float3 CalcSigmaAUsingMelaninParameterRandom(
-    float melanin, float melaninredness, const float3 &tint, const float beta_n,
-    const float random_color, const float random_value) {
-  const float factor_random_color =
-      1.0f + 2.0f * (random_value - 0.5f) * random_color;
-  melanin        = Clamp(melanin, 0.0f, 1.0f) * factor_random_color;
-  melaninredness = Clamp(melaninredness, 0.0f, 1.0f);
-
-  melanin = -MY_LOG(std::max(1.0f - melanin, 0.0001f));
-
-  const float eumelanin   = melanin * (1.0f - melaninredness);
-  const float pheomelanin = melanin * melaninredness;
-
-  const float3 melanin_sigma =
-      float3(std::max(0.0f, eumelanin * 0.506f + pheomelanin * 0.343f),
-             std::max(0.0f, eumelanin * 0.841f + pheomelanin * 0.733f),
-             std::max(0.0f, eumelanin * 1.653f + pheomelanin * 1.924f));
-
-  const float3 tint_sigma = CalcSigmaAFromRGB(tint, beta_n);
-
-  return melanin_sigma + tint_sigma;
-}
-
-inline float3 EnergyConservingHairBsdfPdf(
+inline float3 EnergyConservingHairBsdfCosPdf(
     const float3 &omega_in, const float3 &omega_out, const float h,
-    const std::array<float, 4> &v, const float s, const float sigma_a,
+    const std::array<float, 4> &v, const float s, const float3 sigma_a,
     const float eta, const float alpha /*radian*/,
-    const std::array<float, 4> &tints, const float transparent_scale,
+    const std::array<float3, 4> &tints, const float transparent_scale,
     float *pdf) {
   *pdf = 0.0f;
 
@@ -460,7 +384,7 @@ inline float3 EnergyConservingHairBsdfPdf(
 
   const float mpnp =
       Mp(sin_theta_i, cos_theta_i, sin_theta_o, cos_theta_o, v[3]) *
-      (1.0f / (2.0f * kPi)) * tints[3];
+      (1.0f / (2.0f * kPi));
   pdfs[3] = mpnp * apPdf[3];
 
   ret += mpnp * ap[3] * tints[3];
@@ -494,9 +418,9 @@ inline float SampleTrimmedLogistic(const float s, const float a, const float b,
 
 inline float3 EnergyConservingHairSample(
     const float3 &omega_out, const float h, const std::array<float, 4> &v,
-    const float s, const float sigma_a, const float eta,
-    const float alpha /*radian*/, const std::array<float, 4> &tints,
-    const float transparent_scale, const std::array<float, 4> us,
+    const float s, const float3 sigma_a, const float eta,
+    const float alpha /*radian*/, const std::array<float3, 4> &tints,
+    const float transparent_scale, const std::array<float, 4> &us,
     float3 *omega_in, float *pdf) {
   (*pdf) = 0.0f;
 

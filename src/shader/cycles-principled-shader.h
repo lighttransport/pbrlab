@@ -1,6 +1,5 @@
 #ifndef PBRLAB_CYCLES_PRINCIPLED_SHADER_H_
 #define PBRLAB_CYCLES_PRINCIPLED_SHADER_H_
-#include <tuple>
 
 #include "closure/lambert.h"
 #include "material-param.h"

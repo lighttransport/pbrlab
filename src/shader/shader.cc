@@ -1,6 +1,7 @@
 #include "shader/shader.h"
 
 #include "shader/cycles-principled-shader.h"
+#include "shader/hair-shader.h"
 
 namespace pbrlab {
 
@@ -18,6 +19,10 @@ void Shader(const Scene& scene, const float3& global_omega_out, const RNG& rng,
   if (surface_info->material_param->index() == kCyclesPrincipledBsdfParameter) {
     CyclesPrincipledShader(scene, global_omega_out, rng, surface_info,
                            global_omega_in, throuput, contribute, pdf);
+    return;
+  } else if (surface_info->material_param->index() == kHairBsdfParameter) {
+    HairShader(scene, global_omega_out, rng, surface_info, global_omega_in,
+               throuput, contribute, pdf);
     return;
   }
   assert(false);

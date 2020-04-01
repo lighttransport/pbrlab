@@ -1,12 +1,15 @@
-#ifndef PBRLAB_SHADER_H_
-#define PBRLAB_SHADER_H_
+#ifndef PBRLAB_HAIR_SHADER_H_
+#define PBRLAB_HAIR_SHADER_H_
 
+#include "closure/lambert.h"
+#include "material-param.h"
 #include "random/rng.h"
 #include "scene.h"
 #include "shader-utils.h"
 #include "type.h"
 
 namespace pbrlab {
+
 /**
  *@param[in] scene scene
  *@param[in] global_omega_out omega out (global)
@@ -17,9 +20,11 @@ namespace pbrlab {
  *@param[out] contribute contribution of DI
  *@param[out] pdf pdf of bsdf sampling
  */
-void Shader(const Scene& scene, const float3& global_omega_out, const RNG& rng,
-            SurfaceInfo* surface_info, float3* global_omega_in,
-            float3* throuput, float3* contribute, float* pdf);
+void HairShader(const Scene& scene, const float3& global_omega_out,
+                const RNG& rng, SurfaceInfo* surface_info,
+                float3* global_omega_in, float3* throuput, float3* contribute,
+                float* pdf);
 
 }  // namespace pbrlab
-#endif  // PBRLAB_SHADER_H_
+
+#endif  // PBRLAB_HAIR_SHADER_H_
