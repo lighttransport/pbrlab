@@ -26,7 +26,6 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
   float3 contribution(0.0f);
   float3 throuput(1.0f);
   float bsdf_sampling_pdf = 0.f;
-  float prev_cos          = 0.f;
 
   for (uint32_t depth = 0;; depth++) {
     if (IsBlack(throuput)) break;
@@ -49,14 +48,15 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
             trace_result.instance_id, trace_result.geom_id,
             trace_result.prim_id, &emission, &pdf_area);
         if (has_emission) {
-          const float inv_g =
+          const float area_to_solid_angle =
               abs((trace_result.t * trace_result.t) /
-                  (prev_cos * vdot(surface_info.normal_s, ray.ray_dir)));
+                  vdot(surface_info.normal_s, ray.ray_dir));
 
           const float weight =
               (depth == 0)
                   ? 1.0f
-                  : PowerHeuristicWeight(bsdf_sampling_pdf, pdf_area * inv_g);
+                  : PowerHeuristicWeight(bsdf_sampling_pdf,
+                                         pdf_area * area_to_solid_angle);
           contribution = contribution + weight * emission * throuput;
         }
       }
@@ -79,7 +79,6 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
     contribution      = contribution + throuput * d_contribute;
     throuput          = r_throuput * throuput;
     bsdf_sampling_pdf = _bsdf_sampling_pdf;
-    prev_cos          = vdot(next_ray_dir, surface_info.normal_s);
 
     ray.ray_org = surface_info.global_position;
     ray.ray_dir = next_ray_dir;
