@@ -51,11 +51,11 @@ struct HairBsdfParameter {
   ColoringHair coloring_hair = kMelanin;
   float3 base_color          = {0.18f, 0.06f, 0.02f};
 
-  float melanin           = 1.3f;
-  float melanin_redness   = 0.f;
+  float melanin           = 0.5f;
+  float melanin_redness   = 0.8f;
   float melanin_randomize = 0.f;
 
-  float roughness           = 0.3f;
+  float roughness           = 0.2f;
   float azimuthal_roughness = 0.3f;
 
   float ior = 1.55f;

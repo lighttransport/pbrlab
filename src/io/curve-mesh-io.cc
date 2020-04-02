@@ -46,7 +46,7 @@ bool LoadCurveMeshAsCubicBezierCurve(
       return false;
     }
 
-    uint32_t indices_offset = 0;
+    size_t indices_offset = 0;
     for (size_t strand_id = 0; strand_id < num_strands; ++strand_id) {
       const auto& vertices    = vertices_[strand_id];
       const auto& thicknesses = thicknesses_[strand_id];
@@ -110,7 +110,7 @@ bool LoadCurveMeshAsCubicBezierCurve(
           vertices_thickness->emplace_back(bezier_thicknesses[v_id]);
         }
       }
-      indices_offset += vertices_thickness->size() / 4;
+      indices_offset = (vertices_thickness->size() / 4);
     }
 
     return true;

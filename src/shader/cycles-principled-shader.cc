@@ -470,7 +470,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
 
   assert(std::abs(vdot(*global_omega_in, ez) - omega_in[2]) < kEps);
 
-  const auto cos_i = omega_in[2];
+  const auto cos_i = abs(omega_in[2]);
   *throuput        = bsdf_f * cos_i / ret_pdf;
   *pdf             = ret_pdf;  // pdf of bsdf sampling
 

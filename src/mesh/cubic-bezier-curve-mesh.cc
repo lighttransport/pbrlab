@@ -30,4 +30,13 @@ const std::vector<float>& CubicBezierCurveMesh::GetVertices(void) const {
   return pAttribute_->vertices;
 }
 
+void CubicBezierCurveMesh::SetMaterialId(const uint32_t material_id,
+                                         const uint32_t segment_id) {
+#ifdef NDEBUG
+  material_ids_[segment_id] = material_id;
+#else
+  material_ids_.at(segment_id) = material_id;
+#endif
+}
+
 }  // namespace pbrlab

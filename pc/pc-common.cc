@@ -92,6 +92,15 @@ static bool CreateSceneFromCubicBezierCurve(const std::string& filepath,
     std::cerr << "  num segments : " << curve_mesh.GetNumSegments()
               << std::endl;
 
+    const uint32_t material_id =
+        scene->AddMaterialParam(pbrlab::HairBsdfParameter());
+
+    const uint32_t num_segments = curve_mesh.GetNumSegments();
+
+    for (uint32_t seg_id = 0; seg_id < num_segments; ++seg_id) {
+      curve_mesh.SetMaterialId(material_id, seg_id);
+    }
+
     const pbrlab::MeshPtr mesh_ptr = scene->AddCubicBezierCurveMesh(curve_mesh);
 
     const uint32_t instance_id = scene->CreateInstance(mesh_ptr);

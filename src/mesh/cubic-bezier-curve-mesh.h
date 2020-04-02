@@ -23,6 +23,8 @@ public:
   std::string GetName(void) const;
   const std::vector<float>& GetVertices(void) const;
 
+  void SetMaterialId(const uint32_t material_id, const uint32_t segment_id);
+
 private:
   std::shared_ptr<CurveAttribute> pAttribute_;
   std::vector<uint32_t> indices_;

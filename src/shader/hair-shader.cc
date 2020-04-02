@@ -124,8 +124,9 @@ static HairBsdf ParamToBsdf(const HairBsdfParameter& m_param,
     bsdf.sigma_a =
         CalcSigmaAFromRGB(m_param.base_color, m_param.azimuthal_roughness);
   } else if (m_param.coloring_hair == HairBsdfParameter::kMelanin) {
-    bsdf.sigma_a = CalcSigmaAUsingMelaninParameter(
-        m_param.melanin, m_param.melanin_redness, m_param.melanin_randomize);
+    // TODO randamize
+    bsdf.sigma_a = CalcSigmaAUsingMelaninParameter(m_param.melanin,
+                                                   m_param.melanin_redness);
   } else {
     assert(false);
   }
@@ -183,17 +184,19 @@ void HairShader(const Scene& scene, const float3& global_omega_out,
 
   *contribute = float3(0.f);
   {
+    // NOTE : global normal == ex
     const float3 d = DirectIllumination(
-        scene, omega_out, *surface_info, Rgl, ez, rng,
-        [&bsdf, &ez](const float3& omega_in_, const float3& omega_out_,
-                     float3* bsdf_f_, float* pdf_) {
+        scene, omega_out, *surface_info, Rgl, ex, rng,
+        [&bsdf](const float3& omega_in_, const float3& omega_out_,
+                float3* bsdf_f_, float* pdf_) {
           float3 bsdf_f_cos_i = hair_bsdf::EnergyConservingHairBsdfCosPdf(
               omega_in_, omega_out_, bsdf.h, bsdf.v, bsdf.s, bsdf.sigma_a,
               bsdf.eta, bsdf.alpha, bsdf.tints, bsdf.transparent_scale, pdf_);
 
           // Fit the ordinary BSDF coordinate system.
-          *bsdf_f_ = bsdf_f_cos_i / abs(vdot(omega_in_, ez));
-        });
+          *bsdf_f_ = bsdf_f_cos_i / abs(omega_in_[0]);
+        },
+        false);
     (*contribute) = (*contribute) + d;
   }
 

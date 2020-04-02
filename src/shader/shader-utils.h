@@ -159,10 +159,11 @@ inline SurfaceInfo TraceResultToSufaceInfo(const Ray& ray, const Scene& scene,
 inline float3 DirectIllumination(
     const Scene& scene, const float3& omega_out,
     const SurfaceInfo& surface_info, const float Rgl[4][4],
-    const float3 global_normal, const RNG& rng,
+    const float3& global_normal, const RNG& rng,
     const std::function<void(const float3& omega_in, const float3& omega_out,
                              float3* bsdf_f, float* pdf)>
-        EvalFunc) {
+        EvalFunc,
+    const bool hemisphere = true) {
   const LightManager* light_manager = scene.GetLightManager();
   const auto result_light_sample    = light_manager->SampleAllLight(rng);
 
@@ -182,9 +183,9 @@ inline float3 DirectIllumination(
 
     // To solid angle measure
     const float pdf_sigma =
-        result_light_sample.pdf * dist * dist / (wl_dot_nl * wl_dot_np);
+        abs(result_light_sample.pdf * dist * dist / (wl_dot_nl * wl_dot_np));
 
-    if (wl_dot_nl > 0.0f && wl_dot_np > 0.0f &&
+    if (((!hemisphere) || (wl_dot_nl > 0.0f && wl_dot_np > 0.0f)) &&
         !ShadowRay(scene, pos, dir_to_light, dist)) {
       float3 omega_l;
       Matrix::MultV(dir_to_light.v, Rgl, omega_l.v);
