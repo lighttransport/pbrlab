@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sstream>
 #include <string>
 
 #include "gui-parameter.h"
@@ -272,6 +273,11 @@ GLWindow::~GLWindow() {
     assert(glGetError() == GL_NO_ERROR);
   }
 
+  // Cleanup
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+
   glfwDestroyWindow(window_);
 }
 
@@ -320,6 +326,10 @@ bool GLWindow::SetCurrentBuffer(const size_t buffer_id) {
     return true;
   }
   return false;
+}
+
+void GLWindow::SetRenderItem(std::shared_ptr<RenderItem> &pRenderItem) {
+  gui_param_.pRenderItem = pRenderItem;
 }
 
 std::shared_ptr<ImageBuffer> GLWindow::FetchBuffer(const size_t buffer_id) {
@@ -385,6 +395,47 @@ void GLWindow::DrawCurrentBuffer(void) {
   // Draw
   glBindTexture(GL_TEXTURE_2D, tex_id);
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+static void RequestRerender(GuiParameter *gui_param) {
+  gui_param->pRenderItem->cancel_render_flag.store(true);
+  gui_param->pRenderItem->last_render_pass.store(0);
+  gui_param->pRenderItem->finish_pass.store(0);
+}
+
+static void MainUI(GuiParameter *gui_param, bool *rerender) {
+  ImGui::Begin("Render");
+  if (ImGui::Button("Rerender")) {
+    *rerender = true;
+  }
+
+  const float progress = float(gui_param->pRenderItem->finish_pass.load()) /
+                         float(gui_param->pRenderItem->max_pass.load());
+  std::stringstream ss;
+  ss << "Pass " << gui_param->pRenderItem->finish_pass << " of "
+     << gui_param->pRenderItem->max_pass << " (" << progress * 100.f << "%)";
+  ImGui::ProgressBar(progress, ImVec2(0.0f, 0.0f), ss.str().c_str());
+
+  ImGui::End();
+}
+
+void GLWindow::DrawImguiUI(void) {
+  // start
+  ImGui_ImplOpenGL3_NewFrame();
+  ImGui_ImplGlfw_NewFrame();
+  ImGui::NewFrame();
+
+  bool rerender = false;
+  // draw some window
+  MainUI(&gui_param_, &rerender);
+
+  // end
+  ImGui::Render();
+  ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+  if (rerender) {
+    RequestRerender(&gui_param_);
+  }
 }
 
 // Determine if the window should be closed

@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "gui-parameter.h"
+#include "pc-common.h"
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -66,9 +67,13 @@ public:
   size_t CreateBuffer(const size_t width, const size_t height,
                       const size_t channel);
   bool SetCurrentBuffer(const size_t buffer_id);
+  void SetRenderItem(std::shared_ptr<RenderItem> &render_item);
+
   std::shared_ptr<ImageBuffer> FetchBuffer(const size_t buffer_id);
 
   void DrawCurrentBuffer(void);
+
+  void DrawImguiUI(void);
 
   // Determine if the window should be closed
   int ShouldClose() const;

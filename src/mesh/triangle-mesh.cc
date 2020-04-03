@@ -135,6 +135,15 @@ const std::vector<float>& TriangleMesh::GetVertices(void) const {
   return pAttribute_->vertices;
 }
 
+void TriangleMesh::SetMaterialId(const uint32_t material_id,
+                                 const uint32_t prim_id) {
+#ifdef NDEBUG
+  material_ids_[prim_id] = material_id;
+#else
+  material_ids_.at(prim_id) = material_id;
+#endif
+}
+
 float3 CalcGeometryNormal(const float3& p0, const float3& p1,
                           const float3& p2) {
   return vnormalized(vcross(p1 - p0, p2 - p1));

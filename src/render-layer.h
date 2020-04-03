@@ -22,7 +22,7 @@ struct RenderLayer {
   std::vector<float> rgba;
   std::vector<uint32_t> count;
 
-  std::mutex mtx;
+  mutable std::mutex mtx;
 };
 
 };  // namespace pbrlab

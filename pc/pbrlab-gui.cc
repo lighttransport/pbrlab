@@ -33,19 +33,19 @@ static void GlfwErrorCallback(int error, const char* description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-struct GuiContext {
+struct GuiItem {
   std::shared_ptr<ImageBuffer> pImageBuffer;
 };
 
 static void InitImageBuffer(const size_t width, const size_t height,
                             const size_t channel, GLWindow* gl_window,
-                            GuiContext* gui_context) {
+                            GuiItem* gui_item) {
   const size_t tex_id = gl_window->CreateGlTexture();
   gl_window->SetCurrentGlTexture(tex_id);
 
   const size_t buffer_id = gl_window->CreateBuffer(width, height, channel);
   gl_window->SetCurrentBuffer(buffer_id);
-  gui_context->pImageBuffer = gl_window->FetchBuffer(buffer_id);
+  gui_item->pImageBuffer = gl_window->FetchBuffer(buffer_id);
 }
 
 static void BufferUpdater(const pbrlab::RenderLayer& layer,
@@ -60,6 +60,7 @@ static void BufferUpdater(const pbrlab::RenderLayer& layer,
       1U;  // std::max(1U, std::thread::hardware_concurrency());
 
   {
+    std::lock_guard<std::mutex> lock(layer.mtx);
     std::vector<std::thread> workers;
     std::atomic_uint32_t i(0);
 
@@ -68,10 +69,17 @@ static void BufferUpdater(const pbrlab::RenderLayer& layer,
         (void)thread_id;
         uint32_t px_id = 0;
         while ((px_id = i++) < layer.count.size()) {
-          tmp[px_id * 4 + 0] = layer.rgba[px_id * 4 + 0] / layer.count[px_id];
-          tmp[px_id * 4 + 1] = layer.rgba[px_id * 4 + 1] / layer.count[px_id];
-          tmp[px_id * 4 + 2] = layer.rgba[px_id * 4 + 2] / layer.count[px_id];
-          tmp[px_id * 4 + 3] = layer.rgba[px_id * 4 + 3] / layer.count[px_id];
+          if (layer.count[px_id] == 0) {
+            tmp[px_id * 4 + 0] = 0.f;
+            tmp[px_id * 4 + 1] = 0.f;
+            tmp[px_id * 4 + 2] = 0.f;
+            tmp[px_id * 4 + 3] = 1.f;
+          } else {
+            tmp[px_id * 4 + 0] = layer.rgba[px_id * 4 + 0] / layer.count[px_id];
+            tmp[px_id * 4 + 1] = layer.rgba[px_id * 4 + 1] / layer.count[px_id];
+            tmp[px_id * 4 + 2] = layer.rgba[px_id * 4 + 2] / layer.count[px_id];
+            tmp[px_id * 4 + 3] = layer.rgba[px_id * 4 + 3] / layer.count[px_id];
+          }
         }
       });
     }
@@ -126,41 +134,61 @@ int main(int argc, char** argv) {
 
   const uint32_t width   = 1024;  // TODO
   const uint32_t height  = 1024;  // TODO
-  const uint32_t samples = 8192;  // TODO
+  const uint32_t samples = 32;    // TODO
+
   GLWindow gl_window(int(width), int(height), "PBR lab Viewer");
   printf("start app\n");
 
-  GuiContext gui_context;
-  InitImageBuffer(width, height, 4, &gl_window, &gui_context);
+  GuiItem gui_item;
+  InitImageBuffer(width, height, 4, &gl_window, &gui_item);
 
   // Set Scene
   const std::string obj_filename = std::string(argv[1]);
-  pbrlab::Scene scene;
-  if (!CreateScene(argc, argv, &scene)) {
+
+  std::shared_ptr<RenderItem> pRenderItem(new RenderItem());
+
+  gl_window.SetRenderItem(pRenderItem);
+
+  if (!CreateScene(argc, argv, &(pRenderItem->scene))) {
     return EXIT_FAILURE;
   }
 
-  std::atomic_bool finish_frag(false);
+  std::atomic_bool& finish_frag        = pRenderItem->finish_frag;
+  std::atomic_bool& cancel_render_flag = pRenderItem->cancel_render_flag;
+  std::atomic_size_t& last_render_pass = pRenderItem->last_render_pass;
+  std::atomic_size_t& finish_pass      = pRenderItem->finish_pass;
+  std::atomic_size_t& max_pass         = pRenderItem->max_pass;
 
-  std::atomic_bool cancel_render_flag(false);
-  std::atomic_size_t finish_pass(0);
+  max_pass = samples;
 
   // Start Rendering thread
-  pbrlab::RenderLayer layer;
   std::thread rendering([&](void) {
-    pbrlab::Render(scene, width, height, samples, cancel_render_flag, &layer,
-                   &finish_pass);
+    while (!finish_frag) {
+      if (finish_pass >= max_pass) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        continue;
+      }
+
+      cancel_render_flag = false;
+
+      pbrlab::Render(pRenderItem->scene, width, height, samples,
+                     cancel_render_flag, &(pRenderItem->layer), &finish_pass);
+    }
   });
 
   std::thread buffer_updater([&](void) {
-    size_t last_render_pass = 0;
+    last_render_pass = 0;
     while (!finish_frag) {
+      if (finish_pass >= max_pass) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        continue;
+      }
       if (last_render_pass >= finish_pass) {
         std::this_thread::sleep_for(std::chrono::microseconds(333333));
         continue;
       }
-      last_render_pass = finish_pass;
-      BufferUpdater(layer, gui_context.pImageBuffer.get());
+      last_render_pass.store(finish_pass.load());
+      BufferUpdater(pRenderItem->layer, gui_item.pImageBuffer.get());
     }
   });
 
@@ -172,6 +200,9 @@ int main(int argc, char** argv) {
     glClearDepth(1.0);
 
     gl_window.DrawCurrentBuffer();
+
+    gl_window.DrawImguiUI();
+
     // exchange color buffer and Fetch Event
     gl_window.SwapBuffers();
   }
@@ -181,6 +212,8 @@ int main(int argc, char** argv) {
 
   rendering.join();
   buffer_updater.join();
+
+  printf("finish app\n");
 
   return EXIT_SUCCESS;
 }

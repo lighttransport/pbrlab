@@ -4,6 +4,8 @@
 #include <mutex>
 #include <vector>
 
+#include "pc-common.h"
+
 struct ImageBuffer {
   std::vector<float> buffer;
   size_t width    = size_t(-1);
@@ -26,6 +28,8 @@ struct GuiParameter {
 
   size_t current_buffer_id = size_t(-1);
   std::vector<std::shared_ptr<ImageBuffer>> pImageBuffers;
+
+  std::shared_ptr<RenderItem> pRenderItem;
 };
 
 #endif  // PBRLAB_GUI_PARAMETER_H_

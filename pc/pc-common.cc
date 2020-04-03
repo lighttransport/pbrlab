@@ -24,6 +24,13 @@ namespace fs = ghc::filesystem;
 #pragma clang diagnostic pop
 #endif
 
+RenderItem::RenderItem(void)
+    : cancel_render_flag(false),
+      finish_frag(false),
+      last_render_pass(0),
+      finish_pass(0),
+      max_pass(512) {}
+
 static bool CreateSceneFromObj(const std::string& obj_filename,
                                pbrlab::Scene* scene) {
   std::vector<pbrlab::TriangleMesh> triangle_meshes;
@@ -39,14 +46,30 @@ static bool CreateSceneFromObj(const std::string& obj_filename,
   }
   std::cerr << "Load obj file [" << obj_filename << "]" << std::endl;
 
+  std::vector<uint32_t> material_ids;
+  for (const auto& material_param : material_params) {
+    const uint32_t material_id = scene->AddMaterialParam(material_param);
+    material_ids.emplace_back(material_id);
+  }
+
   const size_t num_shape = triangle_meshes.size();
 
   std::cerr << "The Number of shapes is " << num_shape << " in ["
             << obj_filename << "]" << std::endl;
 
-  for (const auto& triangle_mesh : triangle_meshes) {
+  for (auto& triangle_mesh : triangle_meshes) {
     std::cerr << "  add shape [" << triangle_mesh.GetName() << "]" << std::endl;
     std::cerr << "    num face : " << triangle_mesh.GetNumFaces() << std::endl;
+
+    const uint32_t num_face = triangle_mesh.GetNumFaces();
+
+    const std::vector<uint32_t>& no_fix_material_ids =
+        triangle_mesh.GetMaterials();
+    assert(no_fix_material_ids.size() == num_face);
+    for (uint32_t f_id = 0; f_id < num_face; ++f_id) {
+      triangle_mesh.SetMaterialId(material_ids.at(no_fix_material_ids.at(f_id)),
+                                  f_id);
+    }
 
     const pbrlab::MeshPtr mesh_ptr = scene->AddTriangleMesh(triangle_mesh);
 
@@ -69,9 +92,6 @@ static bool CreateSceneFromObj(const std::string& obj_filename,
     }
   }
   std::cerr << std::endl;
-  for (const auto& material_param : material_params) {
-    scene->AddMaterialParam(material_param);
-  }
   return true;
 }
 

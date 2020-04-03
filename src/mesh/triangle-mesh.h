@@ -40,6 +40,8 @@ public:
   const std::vector<uint32_t>& GetVertexIds(void) const;
   const std::vector<float>& GetVertices(void) const;
 
+  void SetMaterialId(const uint32_t material_id, const uint32_t prim_id);
+
 private:
   uint32_t num_faces_;
 
