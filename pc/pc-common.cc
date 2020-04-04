@@ -24,6 +24,65 @@ namespace fs = ghc::filesystem;
 #pragma clang diagnostic pop
 #endif
 
+EditQueue::EditQueue(void) = default;
+EditQueue::~EditQueue(void) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
+  for (auto& v : queue_) {
+    void* dst                 = v.first;
+    void* src                 = v.second.first;
+    const FileType& file_type = v.second.second;
+    if (dst != nullptr && src != nullptr) {
+      if (file_type == kFloat) {
+        float* src_ = reinterpret_cast<float*>(src);
+        delete src_;
+      } else {
+        assert(false);
+      }
+    }
+  }
+
+  queue_.clear();
+}
+
+template <typename T>
+void CopyAndDeleteSrc(T* src, T* dst) {
+  (*dst) = (*src);
+  if (src != nullptr) {
+    delete src;
+    src = nullptr;
+  }
+}
+
+void EditQueue::EditAndPopAll(void) {
+  std::lock_guard<std::mutex> lock(mtx_);
+
+  for (auto& v : queue_) {
+    void* dst                 = v.first;
+    void* src                 = v.second.first;
+    const FileType& file_type = v.second.second;
+    if (dst != nullptr && src != nullptr) {
+      if (file_type == kFloat) {
+        float* dst_ = reinterpret_cast<float*>(dst);
+        float* src_ = reinterpret_cast<float*>(src);
+
+        CopyAndDeleteSrc(src_, dst_);
+      } else if (file_type == kPbrlabMaterialParameter) {
+        pbrlab::MaterialParameter* dst_ =
+            reinterpret_cast<pbrlab::MaterialParameter*>(dst);
+        pbrlab::MaterialParameter* src_ =
+            reinterpret_cast<pbrlab::MaterialParameter*>(src);
+
+        CopyAndDeleteSrc(src_, dst_);
+      } else {
+        assert(false);
+      }
+    }
+  }
+
+  queue_.clear();
+}
+
 RenderItem::RenderItem(void)
     : cancel_render_flag(false),
       finish_frag(false),

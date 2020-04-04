@@ -4,6 +4,7 @@
 #include <mutex>
 #include <vector>
 
+#include "imgui-parameter.h"
 #include "pc-common.h"
 
 struct ImageBuffer {
@@ -30,6 +31,8 @@ struct GuiParameter {
   std::vector<std::shared_ptr<ImageBuffer>> pImageBuffers;
 
   std::shared_ptr<RenderItem> pRenderItem;
+
+  ImGuiParameter imgui_parameter;
 };
 
 #endif  // PBRLAB_GUI_PARAMETER_H_

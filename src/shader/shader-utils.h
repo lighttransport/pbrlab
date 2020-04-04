@@ -151,7 +151,7 @@ inline SurfaceInfo TraceResultToSufaceInfo(const Ray& ray, const Scene& scene,
   else
     surface_info.face_direction = SurfaceInfo::kAmbiguous;
 
-  surface_info.material_param = scene.FetchMeshMaterialParamPtr(trace_result);
+  surface_info.material_param = scene.FetchMeshMaterialParameter(trace_result);
 
   return surface_info;
 }

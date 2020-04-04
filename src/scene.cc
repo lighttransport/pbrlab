@@ -113,7 +113,7 @@ const LightManager* Scene::GetLightManager(void) const {
   return light_manager_.get();
 }
 
-const MaterialParameter* Scene::FetchMeshMaterialParamPtr(
+const MaterialParameter* Scene::FetchMeshMaterialParameter(
     const TraceResult& trace_result) const {
   assert(trace_result.instance_id < instances_.size());
   const MeshInstance& instance = instances_[trace_result.instance_id];
@@ -131,6 +131,10 @@ const MaterialParameter* Scene::FetchMeshMaterialParamPtr(
 #else
   return &(material_params_.at(material_ids.at(trace_result.prim_id)));
 #endif
+}
+
+std::vector<MaterialParameter>* Scene::FetchMeshMaterialParameters(void) {
+  return &material_params_;
 }
 
 float3 Scene::FetchMeshShadingNormal(const TraceResult& trace_result) const {

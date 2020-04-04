@@ -419,6 +419,324 @@ static void MainUI(GuiParameter *gui_param, bool *rerender) {
   ImGui::End();
 }
 
+static void ColorPicker3(const char *label, float *v, bool *update_material) {
+  if (ImGui::TreeNodeEx("Color Picker", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {
+    if (ImGui::ColorPicker3(label, v)) {
+      *update_material = true;
+    }
+    ImGui::TreePop();
+  }
+}
+
+static void CyclesPrincipledBsdfUI(
+    pbrlab::CyclesPrincipledBsdfParameter *material_param,
+    bool *update_material) {
+  if (ImGui::TreeNodeEx("Base", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::DragFloat3("base color", material_param->base_color.v, 0.01f,
+                          0.0f, 1.f)) {
+      *update_material = true;
+    }
+    ColorPicker3("base color", material_param->base_color.v, update_material);
+
+    if (ImGui::DragFloat("metallic", &(material_param->metallic), 0.01f, 0.f,
+                         1.f)) {
+      *update_material = true;
+    }
+    ImGui::TreePop();
+  }
+  if (ImGui::TreeNodeEx("Subusuface", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {
+    if (ImGui::DragFloat("subsurface", &(material_param->subsurface), 0.01f,
+                         0.0f, 1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat3("subsurface radius",
+                          material_param->subsurface_radius.v, 0.01f, 0.0f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat3("subsurface color",
+                          material_param->subsurface_color.v, 0.01f, 0.0f,
+                          1.f)) {
+      *update_material = true;
+    }
+    ColorPicker3("subsurface color", material_param->subsurface_color.v,
+                 update_material);
+    ImGui::TreePop();
+  }
+  if (ImGui::TreeNodeEx("Specular", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {
+    if (ImGui::DragFloat("specular", &(material_param->specular), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("specular tint", &(material_param->specular_tint),
+                         0.01f, 0.0f, 1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("roughness", &(material_param->roughness), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("ior", &(material_param->ior), 0.01f, 0.0f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("anisotropic", &(material_param->anisotropic), 0.01f,
+                         0.0f, 1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("anisotropic rotation",
+                         &(material_param->anisotropic_rotation), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    ImGui::TreePop();
+  }
+  if (ImGui::TreeNodeEx("Sheen", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {
+    if (ImGui::DragFloat("sheen", &(material_param->sheen), 0.01f, 0.0f, 1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("sheen tint", &(material_param->sheen_tint), 0.01f,
+                         0.0f, 1.f)) {
+      *update_material = true;
+    }
+    ImGui::TreePop();
+  }
+  if (ImGui::TreeNodeEx("Clearcoat", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {
+    if (ImGui::DragFloat("clearcoat", &(material_param->clearcoat), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("clearcoat roughness",
+                         &(material_param->clearcoat_roughness), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    ImGui::TreePop();
+  }
+  if (ImGui::TreeNodeEx("Transmission", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {
+    if (ImGui::DragFloat("transmission", &(material_param->transmission), 0.01f,
+                         0.0f, 1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("transmission roughness",
+                         &(material_param->transmission_roughness), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    ImGui::TreePop();
+  }
+}
+static void HairBsdfUI(ImGuiParameter *imgui_parameter,
+                       pbrlab::HairBsdfParameter *material_param,
+                       bool *update_material) {
+  if (ImGui::TreeNodeEx("Hair Color", ImGuiTreeNodeFlags_DefaultOpen)) {
+    auto &current_hair_coloring = imgui_parameter->current_hair_coloring;
+    const std::vector<std::string> &hair_coloring_names =
+        imgui_parameter->hair_coloring_names;
+
+    pbrlab::HairBsdfParameter::ColoringHair hair_coloring_type =
+        pbrlab::HairBsdfParameter::ColoringHair(material_param->coloring_hair);
+
+    current_hair_coloring =
+        hair_coloring_names.at(size_t(hair_coloring_type)).c_str();
+
+    if (ImGui::BeginCombo("Hair Coloring", current_hair_coloring)) {
+      for (size_t n = 0; n < hair_coloring_names.size(); n++) {
+        bool is_selected =
+            (current_hair_coloring == hair_coloring_names[n].c_str());
+
+        if (ImGui::Selectable(hair_coloring_names[n].c_str(), is_selected)) {
+          current_hair_coloring = hair_coloring_names[n].c_str();
+          hair_coloring_type    = pbrlab::HairBsdfParameter::ColoringHair(n);
+          material_param->coloring_hair = hair_coloring_type;
+          *update_material              = true;
+        }
+        if (is_selected) {
+          ImGui::SetItemDefaultFocus();  // You may set the initial focus when
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (hair_coloring_type == pbrlab::HairBsdfParameter::kRGB) {
+      if (ImGui::DragFloat3("base color", material_param->base_color.v, 0.01f,
+                            0.0f, 1.f)) {
+        *update_material = true;
+      }
+      ColorPicker3("base color", material_param->base_color.v, update_material);
+    } else if (hair_coloring_type == pbrlab::HairBsdfParameter::kMelanin) {
+      if (ImGui::DragFloat("melanin", &(material_param->melanin), 0.01f, 0.0f,
+                           1.f)) {
+        *update_material = true;
+      }
+      if (ImGui::DragFloat("melanin redness",
+                           &(material_param->melanin_redness), 0.01f, 0.0f,
+                           1.f)) {
+        *update_material = true;
+      }
+      if (ImGui::DragFloat("melanin randomize",
+                           &(material_param->melanin_randomize), 0.05f, 0.0f,
+                           1.f)) {
+        *update_material = true;
+      }
+    } else {
+      assert(false);
+    }
+
+    ImGui::TreePop();
+  }
+  if (ImGui::TreeNodeEx("Other", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::DragFloat("roughness", &(material_param->roughness), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("anisotropic roughness",
+                         &(material_param->azimuthal_roughness), 0.01f, 0.0f,
+                         1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("ior", &(material_param->ior), 0.01f, 0.0f, 1.f)) {
+      *update_material = true;
+    }
+    if (ImGui::DragFloat("shift", &(material_param->shift), 0.01f, 0.0f, 1.f)) {
+      *update_material = true;
+    }
+  }
+  if (ImGui::TreeNodeEx("Tint", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::DragFloat3("specular tint", material_param->specular_tint.v,
+                          0.01f, 0.0f, 1.f)) {
+      *update_material = true;
+    }
+    ColorPicker3("specular tint", material_param->specular_tint.v,
+                 update_material);
+    if (ImGui::DragFloat3("specular tint", material_param->specular_tint.v,
+                          0.01f, 0.0f, 1.f)) {
+      *update_material = true;
+    }
+    ColorPicker3("second_specular tint", material_param->second_specular_tint.v,
+                 update_material);
+    if (ImGui::DragFloat3("second_specular tint",
+                          material_param->second_specular_tint.v, 0.01f, 0.0f,
+                          1.f)) {
+      *update_material = true;
+    }
+    ColorPicker3("transmission tint", material_param->transmission_tint.v,
+                 update_material);
+  }
+}
+
+static void MaterialUI(ImGuiParameter *imgui_parameter, pbrlab::Scene *scene,
+                       EditQueue *edit_queue, bool *rerender) {
+  bool update_material = false;
+  std::vector<pbrlab::MaterialParameter> *materials =
+      scene->FetchMeshMaterialParameters();
+  ImGui::Begin("Material");
+
+  if (materials->size() == 0) {
+    ImGui::Text("No materials");
+    ImGui::End();
+    return;
+  }
+  if (ImGui::TreeNodeEx("Edit Material", ImGuiTreeNodeFlags_DefaultOpen)) {
+    std::vector<std::string> &mtl_names = imgui_parameter->mtl_names;
+    mtl_names.resize(materials->size());
+    for (size_t i = 0; i < materials->size(); i++) {
+      mtl_names[i] = std::to_string(i);  // TODO mtl name
+    }
+
+    // Editing material selector
+    size_t &mtl_idx = imgui_parameter->mtl_idx;
+
+    auto &current_material = imgui_parameter->current_material;
+
+    if (current_material == nullptr) {
+      current_material = mtl_names.at(0).c_str();
+    }
+
+    if (ImGui::BeginCombo("material", current_material)) {
+      for (size_t n = 0; n < mtl_names.size(); n++) {
+        bool is_selected = (current_material == mtl_names[n].c_str());
+
+        if (ImGui::Selectable(mtl_names[n].c_str(), is_selected)) {
+          current_material = mtl_names[n].c_str();
+          mtl_idx          = n;
+        }
+        if (is_selected) {
+          ImGui::SetItemDefaultFocus();  // You may set the initial focus when
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (materials->size() <= mtl_idx) {
+      ImGui::End();
+      return;
+    }
+
+    ImGui::Separator();
+
+    pbrlab::MaterialParameter material = {};
+    if (!edit_queue->FetchIfExit(materials->data() + mtl_idx, &material)) {
+      material = materials->at(mtl_idx);
+    }
+
+    pbrlab::MaterialParameterType mtl_type =
+        pbrlab::MaterialParameterType(material.index());
+
+    const std::vector<std::string> &mtl_type_names =
+        imgui_parameter->mtl_type_names;
+    auto &current_material_type = imgui_parameter->current_material_type;
+
+    current_material_type = mtl_type_names.at(size_t(mtl_type)).c_str();
+
+    if (ImGui::BeginCombo("material type", current_material_type)) {
+      for (size_t n = 0; n < mtl_type_names.size(); n++) {
+        bool is_selected = (current_material_type == mtl_type_names[n].c_str());
+
+        if (ImGui::Selectable(mtl_type_names[n].c_str(), is_selected)) {
+          current_material_type = mtl_type_names[n].c_str();
+
+          pbrlab::MaterialParameterType tmp_mtl_type =
+              pbrlab::MaterialParameterType(n);
+          if (tmp_mtl_type != mtl_type) {
+            mtl_type        = tmp_mtl_type;
+            update_material = true;
+            if (mtl_type == pbrlab::kCyclesPrincipledBsdfParameter) {
+              material = pbrlab::CyclesPrincipledBsdfParameter();
+            } else if (mtl_type == pbrlab::kHairBsdfParameter) {
+              material = pbrlab::HairBsdfParameter();
+            } else {
+              assert(false);
+            }
+          }
+        }
+        if (is_selected) {
+          ImGui::SetItemDefaultFocus();  // You may set the initial focus when
+        }
+      }
+      ImGui::EndCombo();
+    }
+
+    if (mtl_type == pbrlab::kCyclesPrincipledBsdfParameter) {
+      pbrlab::CyclesPrincipledBsdfParameter &cycles_material =
+          mpark::get<pbrlab::kCyclesPrincipledBsdfParameter>(material);
+      CyclesPrincipledBsdfUI(&cycles_material, &update_material);
+    } else if (mtl_type == pbrlab::kHairBsdfParameter) {
+      pbrlab::HairBsdfParameter &hair_material =
+          mpark::get<pbrlab::kHairBsdfParameter>(material);
+      HairBsdfUI(imgui_parameter, &hair_material, &update_material);
+    } else {
+      assert(false);
+    }
+
+    if (update_material) {
+      *rerender = true;
+      edit_queue->Push(&material, &(materials->at(mtl_idx)));
+    }
+    ImGui::TreePop();
+  }
+
+  ImGui::End();
+}
+
 void GLWindow::DrawImguiUI(void) {
   // start
   ImGui_ImplOpenGL3_NewFrame();
@@ -428,6 +746,8 @@ void GLWindow::DrawImguiUI(void) {
   bool rerender = false;
   // draw some window
   MainUI(&gui_param_, &rerender);
+  MaterialUI(&(gui_param_.imgui_parameter), &(gui_param_.pRenderItem->scene),
+             &(gui_param_.pRenderItem->edit_queue), &rerender);
 
   // end
   ImGui::Render();

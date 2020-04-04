@@ -55,8 +55,10 @@ public:
   inline LightParameter* FetchMeshLightParamPtr(
       const TraceResult& trace_result) const;
 
-  const MaterialParameter* FetchMeshMaterialParamPtr(
+  const MaterialParameter* FetchMeshMaterialParameter(
       const TraceResult& trace_result) const;
+
+  std::vector<MaterialParameter>* FetchMeshMaterialParameters(void);
 
   float3 FetchMeshShadingNormal(const TraceResult& trace_result) const;
 

@@ -171,6 +171,8 @@ int main(int argc, char** argv) {
 
       cancel_render_flag = false;
 
+      pRenderItem->edit_queue.EditAndPopAll();
+
       pbrlab::Render(pRenderItem->scene, width, height, samples,
                      cancel_render_flag, &(pRenderItem->layer), &finish_pass);
     }
