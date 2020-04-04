@@ -424,9 +424,6 @@ static void RequestRerender(GuiParameter *gui_param) {
 
 static void MainUI(GuiParameter *gui_param, bool *rerender) {
   ImGui::Begin("Render");
-  if (ImGui::Button("Rerender")) {
-    *rerender = true;
-  }
 
   const float progress = float(gui_param->pRenderItem->finish_pass.load()) /
                          float(gui_param->pRenderItem->max_pass.load());
@@ -434,6 +431,17 @@ static void MainUI(GuiParameter *gui_param, bool *rerender) {
   ss << "Pass " << gui_param->pRenderItem->finish_pass << " of "
      << gui_param->pRenderItem->max_pass << " (" << progress * 100.f << "%)";
   ImGui::ProgressBar(progress, ImVec2(0.0f, 0.0f), ss.str().c_str());
+
+  int _max_pass = int(gui_param->pRenderItem->max_pass);
+  if (ImGui::DragInt("max_pass", &_max_pass, 1.f, 1,
+                     std::numeric_limits<int>::max())) {
+    gui_param->pRenderItem->max_pass = size_t(_max_pass);
+    *rerender                        = true;
+  }
+
+  if (ImGui::Button("Rerender")) {
+    *rerender = true;
+  }
 
   ImGui::End();
 }
@@ -626,17 +634,19 @@ static void HairBsdfUI(ImGuiParameter *imgui_parameter,
     }
     ColorPicker3("specular tint", material_param->specular_tint.v,
                  update_material);
-    if (ImGui::DragFloat3("specular tint", material_param->specular_tint.v,
-                          0.01f, 0.0f, 1.f)) {
-      *update_material = true;
-    }
-    ColorPicker3("second_specular tint", material_param->second_specular_tint.v,
-                 update_material);
     if (ImGui::DragFloat3("second_specular tint",
                           material_param->second_specular_tint.v, 0.01f, 0.0f,
                           1.f)) {
       *update_material = true;
     }
+    ColorPicker3("second_specular tint", material_param->second_specular_tint.v,
+                 update_material);
+    if (ImGui::DragFloat3("transmission tint",
+                          material_param->transmission_tint.v, 0.01f, 0.0f,
+                          1.f)) {
+      *update_material = true;
+    }
+
     ColorPicker3("transmission tint", material_param->transmission_tint.v,
                  update_material);
   }

@@ -173,8 +173,9 @@ int main(int argc, char** argv) {
 
       pRenderItem->edit_queue.EditAndPopAll();
 
-      pbrlab::Render(pRenderItem->scene, width, height, samples,
-                     cancel_render_flag, &(pRenderItem->layer), &finish_pass);
+      pbrlab::Render(pRenderItem->scene, width, height,
+                     uint32_t(max_pass.load()), cancel_render_flag,
+                     &(pRenderItem->layer), &finish_pass);
     }
   });
 
