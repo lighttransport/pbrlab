@@ -29,7 +29,7 @@ namespace fs = ghc::filesystem;
 #pragma clang diagnostic pop
 #endif
 
-static void ReshapeFunc(GLFWwindow *window, int w, int h) {
+static void CreateViewport(GLFWwindow *window, int w, int h) {
   int fb_w, fb_h;
   // Get actual framebuffer size.
   glfwGetFramebufferSize(window, &fb_w, &fb_h);
@@ -47,6 +47,25 @@ static void ReshapeFunc(GLFWwindow *window, int w, int h) {
   param->height = h;
 }
 
+static void ReshapeFunc(GLFWwindow *window, int w, int h) {
+  // TODO centering
+
+  // int fb_w, fb_h;
+  // // Get actual framebuffer size.
+  // glfwGetFramebufferSize(window, &fb_w, &fb_h);
+  // glViewport(0, 0, fb_w, fb_h);
+  // glMatrixMode(GL_PROJECTION);
+  // glLoadIdentity();
+  // gluPerspective(45.0, double(w) / double(h), 0.01, 100.0);
+  // glMatrixMode(GL_MODELVIEW);
+  // glLoadIdentity();
+
+  auto *param =
+      reinterpret_cast<GuiParameter *>(glfwGetWindowUserPointer(window));
+
+  param->width  = w;
+  param->height = h;
+}
 static void KeyboardFunc(GLFWwindow *window, int key, int scancode, int action,
                          int mods) {
   (void)window;
@@ -254,7 +273,7 @@ GLWindow::GLWindow(int width, int height, const char *title)
 
   InitializeImgui(window_);
 
-  ReshapeFunc(window_, width, height);
+  CreateViewport(window_, width, height);
 
   // create shader program object
   shader_program_id_ = CreateGlShader();
