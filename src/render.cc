@@ -133,16 +133,29 @@ static uint32_t RenderingTile(const Scene& scene, const uint32_t num_sample,
   scene.FetchSceneAABB(bmin, bmax);
 
   // fov = 30 deg
-  const float screen_size = std::max(bmax[0] - bmin[0], bmax[1] - bmin[1]);
-  const float x_center    = (bmax[0] + bmin[0]) * 0.5f;
-  const float y_center    = (bmax[1] + bmin[1]) * 0.5f;
-  const float z_center    = bmax[2] + screen_size * 0.5f * sqrtf(3.f);
-  const float ray_org[3]  = {x_center, y_center, z_center};
-  const float x_corner    = (bmax[0] + bmin[0]) * 0.5f - screen_size * 0.5f;
-  const float y_corner    = (bmax[1] + bmin[1]) * 0.5f + screen_size * 0.5f;
-  const float z_corner    = bmax[2];
-  const float dx          = screen_size / layer->width;
-  const float dy          = screen_size / layer->height;
+  float horizontal_screen_size;
+  float vertical_screen_size;
+  if (bmax[0] - bmin[0] > bmax[1] - bmin[1]) {
+    horizontal_screen_size = bmax[0] - bmin[0];
+    vertical_screen_size =
+        horizontal_screen_size * float(layer->height) / float(layer->width);
+  } else {
+    vertical_screen_size = bmax[1] - bmin[1];
+    horizontal_screen_size =
+        vertical_screen_size * float(layer->width) / float(layer->height);
+  }
+
+  const float x_center   = (bmax[0] + bmin[0]) * 0.5f;
+  const float y_center   = (bmax[1] + bmin[1]) * 0.5f;
+  const float z_center   = bmax[2] + horizontal_screen_size * 0.5f * sqrtf(3.f);
+  const float ray_org[3] = {x_center, y_center, z_center};
+  const float x_corner =
+      (bmax[0] + bmin[0]) * 0.5f - horizontal_screen_size * 0.5f;
+  const float y_corner =
+      (bmax[1] + bmin[1]) * 0.5f + vertical_screen_size * 0.5f;
+  const float z_corner = bmax[2];
+  const float dx       = horizontal_screen_size / layer->width;
+  const float dy       = vertical_screen_size / layer->height;
 
   for (uint32_t sample = 0; sample < num_sample; ++sample) {
     for (uint32_t y = render_tile.sy; y < render_tile.ty; y++) {
