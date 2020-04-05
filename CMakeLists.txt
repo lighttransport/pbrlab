@@ -70,6 +70,7 @@ set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
 # - Embree3
 # - mpark variant
 # - ghc filesystem
+# - StaticJson
 # TODO check third_party
 
 # [Threads]
@@ -115,6 +116,10 @@ list(APPEND PBRLAB_EXT_LIBRARIES_PUBLIC mpark_variant)
 # [ghc filesystem]
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/filesystem)
 list(APPEND PBRLAB_EXT_LIBRARIES_PUBLIC ghc_filesystem)
+
+# [Static JSON]
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/)
+list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE staticjson)
 
 
 set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)

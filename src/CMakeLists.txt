@@ -10,6 +10,7 @@ set(PBRLAB_SOURCES
     io/curve-mesh-io.cc
     io/cyhair.cc
     io/image-io.cc
+    io/render-config-io.cc
     io/stb_image.cc
     io/stb_image_write.cc
     io/tinyexr.cc
