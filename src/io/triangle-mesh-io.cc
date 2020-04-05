@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+#include "image-utils.h"
+#include "io/image-io.h"
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
@@ -74,14 +77,71 @@ bool ConvertTinyObjMaterialFloat3(const std::string& param_name,
   return find;
 }
 
+static uint32_t LoadTexture(const std::string& filepath,
+                            const std::string& base_dir, const bool degamma,
+                            std::vector<Texture>* textures) {
+  const uint32_t tex_id = uint32_t(textures->size());
+
+  std::vector<float> pixels;
+  size_t width, height, channels;
+  const bool success =
+      LoadImage(filepath, base_dir, &pixels, &width, &height, &channels);
+
+  if (!success) {
+    return uint32_t(-1);
+  }
+
+  if (degamma) {
+    std::vector<float> tmp;
+    SrgbToLiner(pixels, width, height, channels, &tmp);
+    textures->emplace_back(tmp, uint32_t(width), uint32_t(height),
+                           uint32_t(channels));
+  } else {
+    textures->emplace_back(pixels, uint32_t(width), uint32_t(height),
+                           uint32_t(channels));
+  }
+
+  return tex_id;
+}
+
+static void LoadTextureFromTinyObjMaterial(const std::string& param_name,
+                                           const tinyobj::material_t& material,
+                                           const std::string& base_dir,
+                                           uint32_t* tex_id,
+                                           std::vector<Texture>* textures) {
+  if (material.unknown_parameter.count(param_name)) {
+    std::string tex_filepath;
+    tinyobj::texture_option_t texopt;
+
+    tinyobj::ParseTextureNameAndOption(
+        &tex_filepath, &texopt,
+        material.unknown_parameter.find(param_name)->second.c_str());
+
+    const bool degamma =
+        texopt.colorspace.empty() || (texopt.colorspace.compare("sRGB") == 0);
+
+    *tex_id = LoadTexture(tex_filepath, base_dir, degamma, textures);
+
+    if (*tex_id != uint32_t(-1)) {
+      std::cout << "Loaded texture for " << param_name << " : " << tex_filepath
+                << std::endl;
+    }
+  }
+}
+
 static MaterialParameter ParseTinyObjMaterial(
-    const tinyobj::material_t& material) {
+    const tinyobj::material_t& material, const std::string& base_dir,
+    std::vector<Texture>* textures) {
   MaterialParameter ret;
 
   CyclesPrincipledBsdfParameter cycles_principled_bsdf_parameter;
 
   ConvertTinyObjMaterialFloat3("base_color", material,
                                cycles_principled_bsdf_parameter.base_color.v);
+
+  LoadTextureFromTinyObjMaterial(
+      "map_base_color", material, base_dir,
+      &(cycles_principled_bsdf_parameter.base_color_tex_id), textures);
 
   ConvertTinyObjMaterialFloat("subsurface", material,
                               &(cycles_principled_bsdf_parameter.subsurface));
@@ -92,6 +152,10 @@ static MaterialParameter ParseTinyObjMaterial(
   ConvertTinyObjMaterialFloat3(
       "subsurface_color", material,
       cycles_principled_bsdf_parameter.subsurface_color.v);
+
+  LoadTextureFromTinyObjMaterial(
+      "map_subsurface_color", material, base_dir,
+      &(cycles_principled_bsdf_parameter.subsurface_color_tex_id), textures);
 
   ConvertTinyObjMaterialFloat("metallic", material,
                               &(cycles_principled_bsdf_parameter.metallic));
@@ -138,7 +202,8 @@ static MaterialParameter ParseTinyObjMaterial(
 
 bool LoadTriangleMeshFromObj(const std::string& filename,
                              std::vector<TriangleMesh>* meshes,
-                             std::vector<MaterialParameter>* material_params) {
+                             std::vector<MaterialParameter>* material_params,
+                             std::vector<Texture>* textures) {
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
@@ -227,7 +292,8 @@ bool LoadTriangleMeshFromObj(const std::string& filename,
                            texcoords, material_ids);
     }
     for (const auto& material : materials) {
-      material_params->emplace_back(ParseTinyObjMaterial(material));
+      material_params->emplace_back(
+          ParseTinyObjMaterial(material, base_dir, textures));
     }
   }
 

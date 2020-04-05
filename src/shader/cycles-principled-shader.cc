@@ -241,8 +241,12 @@ static void SampleBsdf(const Scene& scene, const float3& omega_out,
   EvalBsdf(*omega_in, omega_out, bsdf, bsdf_f, pdf);
 }
 
-static CyclesPrincipledBsdf ParamToBsdf(
-    const CyclesPrincipledBsdfParameter& m_param) {
+static CyclesPrincipledBsdf ParamToBsdf(const Scene& scene,
+                                        const SurfaceInfo& surface_info) {
+  const CyclesPrincipledBsdfParameter& m_param =
+      mpark::get<kCyclesPrincipledBsdfParameter>(
+          *(surface_info.material_param));
+
   const float3 weight = 1.f;  // whole weight TODO
   // parameters
   //
@@ -276,9 +280,10 @@ static CyclesPrincipledBsdf ParamToBsdf(
 
   float3 base_color;
   if (m_param.base_color_tex_id != uint32_t(-1)) {
-    // TODO
-    assert(false);
-    base_color = float3(0.f);
+    const Texture* texture = scene.GetTexture(m_param.base_color_tex_id);
+
+    texture->FetchFloat3(surface_info.texcoord.x(), surface_info.texcoord.y(),
+                         base_color.v);
   } else {
     base_color = m_param.base_color;
   }
@@ -287,9 +292,10 @@ static CyclesPrincipledBsdf ParamToBsdf(
   const float3& subsurface_radius = m_param.subsurface_radius;
   float3 subsurface_color;
   if (m_param.subsurface_color_tex_id != uint32_t(-1)) {
-    // TODO
-    assert(false);
-    subsurface_color = float3(0.f);
+    const Texture* texture = scene.GetTexture(m_param.subsurface_color_tex_id);
+
+    texture->FetchFloat3(surface_info.texcoord.x(), surface_info.texcoord.y(),
+                         subsurface_color.v);
   } else {
     subsurface_color = m_param.subsurface_color;
   }
@@ -439,11 +445,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
 
   assert(std::abs(omega_out[2] - vdot(global_omega_out, ez)) < kEps);
 
-  const CyclesPrincipledBsdfParameter* m_param =
-      mpark::get_if<CyclesPrincipledBsdfParameter>(
-          surface_info->material_param);
-
-  const CyclesPrincipledBsdf bsdf = ParamToBsdf(*m_param);
+  const CyclesPrincipledBsdf bsdf = ParamToBsdf(scene, *surface_info);
 
   *contribute = float3(0.f);
   {

@@ -113,6 +113,14 @@ const LightManager* Scene::GetLightManager(void) const {
   return light_manager_.get();
 }
 
+const Texture* Scene::GetTexture(const uint32_t tex_id) const {
+#ifdef NDEBUG
+  return textures_[tex_id].get();
+#else
+  return textures_.at(tex_id).get();
+#endif
+}
+
 const MaterialParameter* Scene::FetchMeshMaterialParameter(
     const TraceResult& trace_result) const {
   assert(trace_result.instance_id < instances_.size());
@@ -151,6 +159,27 @@ float3 Scene::FetchMeshShadingNormal(const TraceResult& trace_result) const {
         trace_result.prim_id, trace_result.u, trace_result.v);
   } else if (mesh_p.index() == kCubicBezierCurveMesh) {
     ret = float3(trace_result.normal_g);
+  } else {
+    assert(false);
+  }
+  return ret;
+}
+
+float2 Scene::FetchMeshTexcoord(const TraceResult& trace_result) const {
+  assert(trace_result.instance_id < instances_.size());
+  const MeshInstance& instance = instances_[trace_result.instance_id];
+
+  assert(trace_result.geom_id < instance.meshes.size());
+  const MeshPtr& mesh_p = instance.meshes[trace_result.geom_id];
+
+  float2 ret;
+  if (mesh_p.index() == kTriangleMesh) {
+    // TODO transform
+    ret = mpark::get<kTriangleMesh>(mesh_p)->FetchTexcoord(
+        trace_result.prim_id, trace_result.u, trace_result.v);
+  } else if (mesh_p.index() == kCubicBezierCurveMesh) {
+    // TODO
+    ret = float2(0.f, 0.f);
   } else {
     assert(false);
   }

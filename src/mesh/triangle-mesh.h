@@ -33,6 +33,9 @@ public:
   // TODO transform
   float FetchFaceArea(const uint32_t prim_id) const;
 
+  float2 FetchTexcoord(const uint32_t prim_id, const float u,
+                       const float v) const;
+
   const std::vector<uint32_t>& GetMaterials(void) const;
   uint32_t GetNumFaces(void) const;
   uint32_t GetNumVertices(void) const;

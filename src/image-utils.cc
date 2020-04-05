@@ -96,4 +96,74 @@ template void LinerToSrgb(const std::vector<double>& src, const size_t width,
                           const size_t height, const size_t channels,
                           std::vector<double>* out);
 
+void BilinearFilter(const std::vector<float>& image, const size_t width,
+                    const size_t height, const size_t components, const float u,
+                    const float v, const bool wrap_u, const bool wrap_v,
+                    float* dst) {
+  float uu, vv;
+
+  if (wrap_u) {
+    uu = u - floor(u);
+  } else {
+    // clamp
+    uu = std::max(u, 0.0f);
+    uu = std::min(uu, 1.0f);
+  }
+
+  if (wrap_v) {
+    vv = v - floor(v);
+  } else {
+    vv = std::max(v, 0.0f);
+    vv = std::min(vv, 1.0f);
+  }
+
+  const float px = width * uu;
+  const float py = height * vv;
+
+  const int x0 = std::max(0, std::min(int(width) - 1, int(px)));
+  const int y0 = std::max(0, std::min(int(height) - 1, int(py)));
+
+  int x1, y1;
+
+  if (wrap_u) {
+    x1 = ((x0 + 1) >= int(width)) ? 0 : (x0 + 1);
+  } else {
+    x1 = ((x0 + 1) >= int(width)) ? (int(width) - 1) : (x0 + 1);
+  }
+
+  if (wrap_v) {
+    y1 = ((y0 + 1) >= int(height)) ? 0 : (y0 + 1);
+  } else {
+    y1 = ((y0 + 1) >= int(height)) ? (int(height) - 1) : (y0 + 1);
+  }
+  const float dx = px - float(x0);
+  const float dy = py - float(y0);
+
+  float w[4];
+  w[0] = (1.0f - dx) * (1.0f - dy);
+  w[1] = (1.0f - dx) * (dy);  // +y
+  w[2] = (dx) * (1.0f - dy);  // +x
+  w[3] = (dx) * (dy);         // +x, +y
+
+  const int stride = int(components);
+
+  const int i00 = stride * (y0 * int(width) + x0);
+  const int i01 = stride * (y0 * int(width) + x1);
+  const int i10 = stride * (y1 * int(width) + x0);
+  const int i11 = stride * (y1 * int(width) + x1);
+
+  float texel[4][4];
+  for (int i = 0; i < stride; i++) {
+    texel[0][i] = image[size_t(i00 + i)];
+    texel[1][i] = image[size_t(i10 + i)];
+    texel[2][i] = image[size_t(i01 + i)];
+    texel[3][i] = image[size_t(i11 + i)];
+  }
+
+  for (int i = 0; i < stride; i++) {
+    dst[i] = texel[0][i] * w[0] + texel[1][i] * w[1] + texel[2][i] * w[2] +
+             texel[3][i] * w[3];
+  }
+}
+
 }  // namespace pbrlab

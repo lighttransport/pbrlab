@@ -42,6 +42,12 @@ extern template void LinerToSrgb(const std::vector<double>& src,
                                  const size_t width, const size_t height,
                                  const size_t channels,
                                  std::vector<double>* out);
+
+void BilinearFilter(const std::vector<float>& image, const size_t width,
+                    const size_t height, const size_t components, const float u,
+                    const float v, const bool wrap_u, const bool wrap_v,
+                    float* dst);
+
 }  // namespace pbrlab
 
 #endif  // PBRLAB_IMAGE_UTILS_H_

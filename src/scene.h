@@ -7,6 +7,7 @@
 #include "mesh-instance.h"
 #include "ray.h"
 #include "raytracer/raytracer.h"
+#include "texture.h"
 
 namespace pbrlab {
 
@@ -42,6 +43,13 @@ public:
     return id;
   }
 
+  template <class... Args>
+  uint32_t AddTexture(Args&&... args) {
+    const uint32_t id = static_cast<uint32_t>(textures_.size());
+    textures_.emplace_back(std::make_shared<Texture>(args...));
+    return id;
+  }
+
   void AttachLightParamIdsToInstance(
       const uint32_t instance_id,
       const std::vector<std::vector<uint32_t>>& light_param_ids);
@@ -51,6 +59,7 @@ public:
   uint32_t CreateInstance(const MeshPtr& mesh_ptr);
 
   const LightManager* GetLightManager(void) const;
+  const Texture* GetTexture(const uint32_t tex_id) const;
 
   inline LightParameter* FetchMeshLightParamPtr(
       const TraceResult& trace_result) const;
@@ -61,6 +70,8 @@ public:
   std::vector<MaterialParameter>* FetchMeshMaterialParameters(void);
 
   float3 FetchMeshShadingNormal(const TraceResult& trace_result) const;
+
+  float2 FetchMeshTexcoord(const TraceResult& trace_result) const;
 
   void FetchSceneAABB(float* bmax, float* bmin) const;
 
@@ -76,6 +87,8 @@ private:
   std::vector<std::shared_ptr<CubicBezierCurveMesh>> cubic_bezier_curve_meshes_;
 
   std::vector<MaterialParameter> material_params_;
+
+  std::vector<std::shared_ptr<Texture>> textures_;
 
   raytracer::Raytracer raytracer_;
 

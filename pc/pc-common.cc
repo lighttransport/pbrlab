@@ -94,9 +94,10 @@ static bool CreateSceneFromObj(const std::string& obj_filename,
                                pbrlab::Scene* scene) {
   std::vector<pbrlab::TriangleMesh> triangle_meshes;
   std::vector<pbrlab::MaterialParameter> material_params;
+  std::vector<pbrlab::Texture> textures;
   {
     const bool success = pbrlab::io::LoadTriangleMeshFromObj(
-        obj_filename, &triangle_meshes, &material_params);
+        obj_filename, &triangle_meshes, &material_params, &textures);
     if (!success) {
       std::cerr << "Faild loading obj file [" << obj_filename << "]"
                 << std::endl;

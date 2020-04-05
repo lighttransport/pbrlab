@@ -30,6 +30,8 @@ struct SurfaceInfo {
   float3 tangent;    // TODO optional
   float3 bitangent;  // TODO optional
 
+  float2 texcoord;
+
   // TODO texcoord
 
   enum FaceDirection { kFront, kBack, kAmbiguous };
@@ -140,6 +142,8 @@ inline SurfaceInfo TraceResultToSufaceInfo(const Ray& ray, const Scene& scene,
   surface_info.normal_g = float3(trace_result.normal_g);
 
   // TODO tangent, binormal
+
+  surface_info.texcoord = scene.FetchMeshTexcoord(trace_result);
 
   // back face test
   if (vdot(ray.ray_dir, surface_info.normal_g) < 0.0f &&

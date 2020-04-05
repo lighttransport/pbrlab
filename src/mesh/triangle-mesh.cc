@@ -91,10 +91,10 @@ float3 TriangleMesh::FetchShadingNormal(const uint32_t prim_id, const float u,
         u, v));
 #else
     ret = vnormalized(Lerp3(
-        float3(&(pAttribute_->normals.at(normal_ids_[prim_id * 3 + 0] * 4))),
-        float3(&(pAttribute_->normals.at(normal_ids_[prim_id * 3 + 1] * 4))),
-        float3(&(pAttribute_->normals.at(normal_ids_[prim_id * 3 + 2] * 4))), u,
-        v));
+        float3(&(pAttribute_->normals.at(normal_ids_.at(prim_id * 3 + 0) * 4))),
+        float3(&(pAttribute_->normals.at(normal_ids_.at(prim_id * 3 + 1) * 4))),
+        float3(&(pAttribute_->normals.at(normal_ids_.at(prim_id * 3 + 2) * 4))),
+        u, v));
 #endif
   }
   return ret;
@@ -121,6 +121,38 @@ float TriangleMesh::FetchFaceArea(const uint32_t prim_id) const {
 
   // return (p1 - p0).cross(p2 - p0).norm() * 0.5f;
   return vlength(vcross(p1 - p0, p2 - p0)) * 0.5f;
+}
+
+float2 TriangleMesh::FetchTexcoord(const uint32_t prim_id, const float u,
+                                   const float v) const {
+  assert(prim_id < num_faces_);
+  float2 ret = {};
+  if (texcoord_ids_[prim_id * 3 + 0] == static_cast<uint32_t>(-1) ||
+      texcoord_ids_[prim_id * 3 + 1] == static_cast<uint32_t>(-1) ||
+      texcoord_ids_[prim_id * 3 + 2] == static_cast<uint32_t>(-1)) {
+    ret = float2(u, v);
+  } else {
+#ifdef NDEBUG
+    return Lerp3(float2(pAttribute_->texcoords.data() +
+                        texcoord_ids_[prim_id * 3 + 0] * 2),
+                 float2(pAttribute_->texcoords.data() +
+                        texcoord_ids_[prim_id * 3 + 1] * 2),
+                 float2(pAttribute_->texcoords.data() +
+                        texcoord_ids_[prim_id * 3 + 2] * 2),
+                 u, v);
+#else
+    ret = Lerp3(
+        float2(&(
+            pAttribute_->texcoords.at(texcoord_ids_.at(prim_id * 3 + 0) * 2))),
+        float2(&(
+            pAttribute_->texcoords.at(texcoord_ids_.at(prim_id * 3 + 1) * 2))),
+        float2(&(
+            pAttribute_->texcoords.at(texcoord_ids_.at(prim_id * 3 + 2) * 2))),
+        u, v);
+
+#endif
+  }
+  return ret;
 }
 
 uint32_t TriangleMesh::GetNumFaces(void) const { return num_faces_; }

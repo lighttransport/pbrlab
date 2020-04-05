@@ -23,6 +23,7 @@ set(PBRLAB_SOURCES
     shader/cycles-principled-shader.cc
     shader/hair-shader.cc
     shader/shader.cc
+    texture.cc
    )
 
 add_library(${BUILD_TARGET} SHARED
