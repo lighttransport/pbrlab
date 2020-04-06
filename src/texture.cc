@@ -14,8 +14,6 @@ Texture::Texture(const std::vector<float>& pixels, const uint32_t width,
   assert(width_ * height_ * channels_ == pixels_.size());
 }
 
-Texture::~Texture(void){};
-
 bool Texture::Reset(const std::vector<float>& pixels, const uint32_t width,
                     const uint32_t height, const uint32_t channels) {
   if (width * height * channels != pixels.size()) {

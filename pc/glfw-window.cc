@@ -465,6 +465,10 @@ static void CyclesPrincipledBsdfUI(
     }
     ColorPicker3("base color", material_param->base_color.v, update_material);
 
+    if (material_param->base_color_tex_id != uint32_t(-1)) {
+      ImGui::Text("use texture");
+    }
+
     if (ImGui::DragFloat("metallic", &(material_param->metallic), 0.01f, 0.f,
                          1.f)) {
       *update_material = true;
@@ -487,6 +491,11 @@ static void CyclesPrincipledBsdfUI(
     }
     ColorPicker3("subsurface color", material_param->subsurface_color.v,
                  update_material);
+
+    if (material_param->subsurface_color_tex_id != uint32_t(-1)) {
+      ImGui::Text("use texture");
+    }
+
     ImGui::TreePop();
   }
   if (ImGui::TreeNodeEx("Specular", ImGuiTreeNodeFlags_NoAutoOpenOnLog)) {

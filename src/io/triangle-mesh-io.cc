@@ -104,6 +104,16 @@ static uint32_t LoadTexture(const std::string& filepath,
   return tex_id;
 }
 
+static bool IsHdr(const std::string& filepath) {
+  const std::string file_extension = fs::path(filepath).extension();
+
+  std::string tmp = file_extension;
+  std::transform(file_extension.begin(), file_extension.end(), tmp.begin(),
+                 tolower);
+
+  return (tmp == ".exr" || tmp == ".hdr");
+}
+
 static void LoadTextureFromTinyObjMaterial(const std::string& param_name,
                                            const tinyobj::material_t& material,
                                            const std::string& base_dir,
@@ -117,8 +127,9 @@ static void LoadTextureFromTinyObjMaterial(const std::string& param_name,
         &tex_filepath, &texopt,
         material.unknown_parameter.find(param_name)->second.c_str());
 
-    const bool degamma =
-        texopt.colorspace.empty() || (texopt.colorspace.compare("sRGB") == 0);
+    const bool degamma = ((texopt.colorspace.empty() ||
+                           (texopt.colorspace.compare("sRGB") == 0)) &&
+                          (!IsHdr(tex_filepath)));
 
     *tex_id = LoadTexture(tex_filepath, base_dir, degamma, textures);
 
@@ -260,7 +271,12 @@ bool LoadTriangleMeshFromObj(const std::string& filename,
     }
 
     assert(attrib.texcoords.size() % 2 == 0);
-    out_attrib->texcoords = attrib.texcoords;
+    const size_t num_texcoords = attrib.texcoords.size() / 2;
+    out_attrib->texcoords.resize(num_texcoords * 2);
+    for (size_t i = 0; i < num_texcoords; ++i) {
+      out_attrib->texcoords[i * 2 + 0] = attrib.texcoords[i * 2 + 0];
+      out_attrib->texcoords[i * 2 + 1] = 1.f - attrib.texcoords[i * 2 + 1];
+    }
 
     meshes->clear();
     for (const auto& shape : shapes) {

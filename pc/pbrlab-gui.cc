@@ -136,22 +136,22 @@ int main(int argc, char** argv) {
   const uint32_t height  = 1024;  // TODO
   const uint32_t samples = 32;    // TODO
 
+  // Set Scene
+  const std::string obj_filename = std::string(argv[1]);
+
+  std::shared_ptr<RenderItem> pRenderItem(new RenderItem());
+
+  if (!CreateScene(argc, argv, &(pRenderItem->scene))) {
+    return EXIT_FAILURE;
+  }
+
   GLWindow gl_window(int(width), int(height), "PBR lab Viewer");
   printf("start app\n");
 
   GuiItem gui_item;
   InitImageBuffer(width, height, 4, &gl_window, &gui_item);
 
-  // Set Scene
-  const std::string obj_filename = std::string(argv[1]);
-
-  std::shared_ptr<RenderItem> pRenderItem(new RenderItem());
-
   gl_window.SetRenderItem(pRenderItem);
-
-  if (!CreateScene(argc, argv, &(pRenderItem->scene))) {
-    return EXIT_FAILURE;
-  }
 
   std::atomic_bool& finish_frag        = pRenderItem->finish_frag;
   std::atomic_bool& cancel_render_flag = pRenderItem->cancel_render_flag;

@@ -69,6 +69,34 @@ static bool LoadExrImage(const std::string& filepath, std::vector<T>* pixels,
 }
 
 template <typename T>
+static bool LoadHdrImage(const std::string& filepath, std::vector<T>* pixels,
+                         size_t* width, size_t* height, size_t* channels) {
+  int tmp_w = 0;
+  int tmp_h = 0;
+  int tmp_c = 0;
+
+  float* pixelf = stbi_loadf(filepath.c_str(), &tmp_w, &tmp_h, &tmp_c, 0);
+
+  *width    = size_t(tmp_w);
+  *height   = size_t(tmp_h);
+  *channels = size_t(tmp_c);
+
+  const size_t n = (*width) * (*height) * (*channels);
+
+  if (pixelf != nullptr) {
+    pixels->resize(n);
+    for (size_t i = 0; i < n; ++i) {
+      (*pixels)[i] = T(pixelf[i]);
+    }
+  }
+
+  stbi_image_free(pixelf);
+
+  return *width != 0 && *height != 0 && *channels != 0 &&
+         pixels->size() == (*width) * (*height) * (*channels);
+}
+
+template <typename T>
 bool LoadImage(const std::string& filename, const std::string& asset_path,
                std::vector<T>* pixels, size_t* width, size_t* height,
                size_t* channels) {
@@ -81,11 +109,13 @@ bool LoadImage(const std::string& filename, const std::string& asset_path,
   if (std::is_same<float, T>::value || std::is_same<double, T>::value) {  // exr
     const std::string file_extension = fs::path(filename).extension();
 
-    std::string tmp;
+    std::string tmp = file_extension;
     std::transform(file_extension.begin(), file_extension.end(), tmp.begin(),
                    tolower);
-    if (file_extension == ".exr") {
+    if (tmp == ".exr") {
       return LoadExrImage(file_path.string(), pixels, width, height, channels);
+    } else if (tmp == ".hdr") {
+      return LoadHdrImage(file_path.string(), pixels, width, height, channels);
     }
   }
 
@@ -93,45 +123,34 @@ bool LoadImage(const std::string& filename, const std::string& asset_path,
   int tmp_h = 0;
   int tmp_c = 0;
 
-  static_assert(
-      std::is_same<unsigned char, T>::value || std::is_same<float, T>::value,
-      "ivalid pixel type");
+  static_assert(std::is_same<unsigned char, T>::value ||
+                    std::is_same<float, T>::value ||
+                    std::is_same<double, T>::value,
+                "ivalid pixel type");
 
-  if (std::is_same<unsigned char, T>::value) {
-    unsigned char* pixeli =
-        stbi_load(file_path.c_str(), &tmp_w, &tmp_h, &tmp_c, 0);
+  unsigned char* pixeli =
+      stbi_load(file_path.c_str(), &tmp_w, &tmp_h, &tmp_c, 0);
 
-    *width    = size_t(tmp_w);
-    *height   = size_t(tmp_h);
-    *channels = size_t(tmp_c);
+  *width    = size_t(tmp_w);
+  *height   = size_t(tmp_h);
+  *channels = size_t(tmp_c);
 
-    const size_t n = (*width) * (*height) * (*channels);
+  const size_t n = (*width) * (*height) * (*channels);
 
-    if (pixeli != nullptr) {
-      pixels->resize(n);
+  if (pixeli != nullptr) {
+    pixels->resize(n);
+    if (std::is_same<unsigned char, T>::value) {
       for (size_t i = 0; i < n; ++i) {
         (*pixels)[i] = T(pixeli[i]);
+      }
+    } else if (std::is_same<float, T>::value ||
+               std::is_same<double, T>::value) {
+      for (size_t i = 0; i < n; ++i) {
+        (*pixels)[i] = T(pixeli[i]) / T(255);
       }
     }
 
     stbi_image_free(pixeli);
-  } else if (std::is_same<float, T>::value) {
-    float* pixelf = stbi_loadf(file_path.c_str(), &tmp_w, &tmp_h, &tmp_c, 0);
-
-    *width    = size_t(tmp_w);
-    *height   = size_t(tmp_h);
-    *channels = size_t(tmp_c);
-
-    const size_t n = (*width) * (*height) * (*channels);
-
-    if (pixelf != nullptr) {
-      pixels->resize(n);
-      for (size_t i = 0; i < n; ++i) {
-        (*pixels)[i] = T(pixelf[i]);
-      }
-    }
-
-    stbi_image_free(pixelf);
   }
 
   return *width != 0 && *height != 0 && *channels != 0 &&

@@ -90,6 +90,13 @@ RenderItem::RenderItem(void)
       finish_pass(0),
       max_pass(512) {}
 
+static void FixTextureId(const std::vector<uint32_t>& texture_ids,
+                         uint32_t* fixed_texture_id) {
+  if (*fixed_texture_id != uint32_t(-1)) {
+    *fixed_texture_id = texture_ids.at(*fixed_texture_id);
+  }
+}
+
 static bool CreateSceneFromObj(const std::string& obj_filename,
                                pbrlab::Scene* scene) {
   std::vector<pbrlab::TriangleMesh> triangle_meshes;
@@ -110,6 +117,24 @@ static bool CreateSceneFromObj(const std::string& obj_filename,
   for (const auto& material_param : material_params) {
     const uint32_t material_id = scene->AddMaterialParam(material_param);
     material_ids.emplace_back(material_id);
+  }
+
+  std::vector<uint32_t> texture_ids;
+  for (const auto& texture : textures) {
+    const uint32_t tex_id = scene->AddTexture(texture);
+    texture_ids.emplace_back(tex_id);
+  }
+
+  // Fix tex id
+  for (auto& material_param : material_params) {
+    if (material_param.index() == pbrlab::kCyclesPrincipledBsdfParameter) {
+      pbrlab::CyclesPrincipledBsdfParameter& cycles_material_param =
+          mpark::get<pbrlab::kCyclesPrincipledBsdfParameter>(material_param);
+
+      FixTextureId(texture_ids, &(cycles_material_param.base_color_tex_id));
+      FixTextureId(texture_ids,
+                   &(cycles_material_param.subsurface_color_tex_id));
+    }
   }
 
   const size_t num_shape = triangle_meshes.size();

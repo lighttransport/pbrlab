@@ -332,8 +332,7 @@ static CyclesPrincipledBsdf ParamToBsdf(const Scene& scene,
   // diffuse
   {
     const float3 mixed_ss_base_color =
-        m_param.subsurface_color * m_param.subsurface +
-        m_param.base_color * (1.0f - m_param.subsurface);
+        subsurface_color * subsurface + base_color * (1.0f - subsurface);
 
     bsdf.enable_diffuse = false;
     if (Average(mixed_ss_base_color) > kClosureWeightCutOff) {

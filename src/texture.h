@@ -12,7 +12,6 @@ public:
   explicit Texture(void);
   explicit Texture(const std::vector<float>& pixels, const uint32_t width,
                    const uint32_t height, const uint32_t channels);
-  ~Texture(void);
 
   bool Reset(const std::vector<float>& pixels, const uint32_t width,
              const uint32_t height, const uint32_t channels);
