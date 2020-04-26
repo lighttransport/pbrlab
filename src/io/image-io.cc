@@ -54,6 +54,7 @@ static bool LoadExrImage(const std::string& filepath, std::vector<T>* pixels,
 
     size_t n_elem = size_t(w * h);
 
+    pixels->resize((*width) * (*height) * (*channels));
     // RGBA
     for (size_t i = 0; i < n_elem; i++) {
       (*pixels)[4 * i + 0] = T(rgba[4 * i + 0]);
