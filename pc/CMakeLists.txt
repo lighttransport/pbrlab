@@ -26,6 +26,7 @@ set(PBRLAB_GUI_DEPS_SOURCES
 add_library(${BUILD_TARGET}-gui-deps STATIC ${PBRLAB_GUI_DEPS_SOURCES})
 target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_DEPS_INCLUDE_DIRS})
 target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
+target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC glfw ${OPENGL_LIBRARIES})
 target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
 
 
@@ -40,7 +41,6 @@ add_executable(${BUILD_TARGET}-gui pbrlab-gui.cc
                                    pc-common.cc)
 list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-gui)
 target_link_libraries(${BUILD_TARGET}-gui PRIVATE ${BUILD_TARGET}-gui-deps)
-target_link_libraries(${BUILD_TARGET}-gui PRIVATE glfw ${OPENGL_LIBRARIES})
 
 
 foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
