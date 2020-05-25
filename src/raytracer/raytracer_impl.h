@@ -21,18 +21,23 @@ public:
   Impl(void);
   ~Impl();
 
-  void RegisterNewTriangleMesh(const float* vertices,
-                               const uint32_t num_vertices,
-                               const uint32_t* faces, const uint32_t num_faces,
-                               const float transform[4][4],
-                               uint32_t* instance_id, uint32_t* local_scene_id,
-                               uint32_t* local_geom_id);
+  uint32_t AddTriangleMeshToLocalScene(const uint32_t local_scene_id,
+                                       const float* vertices,
+                                       const uint32_t num_vertices,
+                                       const uint32_t* faces,
+                                       const uint32_t num_faces);
 
-  void RegisterNewCubicBezierCurveMesh(
-      const float* vertices_thickness, const uint32_t num_vertices,
-      const uint32_t* indices, const uint32_t num_segments,
-      const float transform[4][4], uint32_t* instance_id,
-      uint32_t* local_scene_id, uint32_t* local_geom_id);
+  uint32_t AddCubicBezierCurveMeshToLocalScene(const uint32_t local_scene_id,
+                                               const float* vertices_thickness,
+                                               const uint32_t num_vertices,
+                                               const uint32_t* indices,
+                                               const uint32_t num_segments);
+
+  uint32_t CreateLocalScene(void);
+
+  // return new instance id
+  uint32_t CreateInstanceFromLocalScene(uint32_t local_scene_id,
+                                        const float transform[4][4]);
 
   bool GetSceneAABB(float* bmin, float* bmax) const;
 
@@ -43,9 +48,6 @@ public:
                const float max_t) const;
 
 private:
-  // return new instance id
-  uint32_t CreateInstanceFromLocalScene(uint32_t local_scene_id,
-                                        const float transform[4][4]);
   RTCDevice embree_device_      = nullptr;
   RTCScene embree_global_scene_ = nullptr;
   std::vector<LocalScene> local_scenes_;

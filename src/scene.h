@@ -50,13 +50,19 @@ public:
     return id;
   }
 
+  uint32_t AddMeshToLocalScene(const uint32_t local_scene_id,
+                               const MeshPtr& mesh_ptr);
+
   void AttachLightParamIdsToInstance(
       const uint32_t instance_id,
       const std::vector<std::vector<uint32_t>>& light_param_ids);
 
   void CommitScene(void);
 
-  uint32_t CreateInstance(const MeshPtr& mesh_ptr);
+  uint32_t CreateInstance(const uint32_t local_scene_id,
+                          const float transform[4][4]);
+
+  uint32_t CreateLocalScene(void);
 
   const LightManager* GetLightManager(void) const;
   const Texture* GetTexture(const uint32_t tex_id) const;
@@ -80,6 +86,8 @@ public:
   bool AnyHit1(const Ray& ray) const;
 
 private:
+  std::vector<std::shared_ptr<LocalScene>> local_scenes_;
+
   std::vector<MeshInstance> instances_;
 
   std::vector<std::shared_ptr<TriangleMesh>> triangle_meshes_;

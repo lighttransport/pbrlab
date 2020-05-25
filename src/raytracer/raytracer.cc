@@ -10,23 +10,28 @@ namespace raytracer {
 Raytracer::Raytracer(void) : impl_(new Impl()) {}
 Raytracer::~Raytracer(void) = default;
 
-void Raytracer::RegisterNewTriangleMesh(
-    const float* vertices, const uint32_t num_vertices, const uint32_t* faces,
-    const uint32_t num_faces, const float transform[4][4],
-    uint32_t* instance_id, uint32_t* local_scene_id, uint32_t* local_geom_id) {
-  impl_->RegisterNewTriangleMesh(vertices, num_vertices, faces, num_faces,
-                                 transform, instance_id, local_scene_id,
-                                 local_geom_id);
+uint32_t Raytracer::AddTriangleMeshToLocalScene(const uint32_t local_scene_id,
+                                                const float* vertices,
+                                                const uint32_t num_vertices,
+                                                const uint32_t* faces,
+                                                const uint32_t num_faces) {
+  return impl_->AddTriangleMeshToLocalScene(local_scene_id, vertices,
+                                            num_vertices, faces, num_faces);
 }
 
-void Raytracer::RegisterNewCubicBezierCurveMesh(
-    const float* vertices_thickness, const uint32_t num_vertices,
-    const uint32_t* indices, const uint32_t num_segments,
-    const float transform[4][4], uint32_t* instance_id,
-    uint32_t* local_scene_id, uint32_t* local_geom_id) {
-  impl_->RegisterNewCubicBezierCurveMesh(
-      vertices_thickness, num_vertices, indices, num_segments, transform,
-      instance_id, local_scene_id, local_geom_id);
+uint32_t Raytracer::AddCubicBezierCurveMeshToLocalScene(
+    const uint32_t local_scene_id, const float* vertices_thickness,
+    const uint32_t num_vertices, const uint32_t* indices,
+    const uint32_t num_segments) {
+  return impl_->AddCubicBezierCurveMeshToLocalScene(
+      local_scene_id, vertices_thickness, num_vertices, indices, num_segments);
+}
+
+uint32_t Raytracer::CreateLocalScene(void) { return impl_->CreateLocalScene(); }
+
+uint32_t Raytracer::CreateInstanceFromLocalScene(uint32_t local_scene_id,
+                                                 const float transform[4][4]) {
+  return impl_->CreateInstanceFromLocalScene(local_scene_id, transform);
 }
 
 bool Raytracer::GetSceneAABB(float* bmin, float* bmax) const {

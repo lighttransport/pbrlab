@@ -11,6 +11,56 @@ namespace pbrlab {
 Scene::Scene(void) : light_manager_(new LightManager()) {}
 Scene::~Scene(void) = default;
 
+uint32_t Scene::AddMeshToLocalScene(const uint32_t local_scene_id,
+                                    const MeshPtr& mesh_ptr) {
+  assert(local_scene_id <= local_scenes_.size());
+
+  uint32_t local_geom_id = uint32_t(-1);
+  if (mesh_ptr.index() == kTriangleMesh) {
+    // Triangle Mesh
+    const std::shared_ptr<TriangleMesh> triangle_mesh =
+        mpark::get<kTriangleMesh>(mesh_ptr);
+
+    // BVH
+    const std::vector<float>& vertices = triangle_mesh.get()->GetVertices();
+    const std::vector<uint32_t>& vertex_ids =
+        triangle_mesh.get()->GetVertexIds();
+
+    const uint32_t num_vertices = triangle_mesh.get()->GetNumVertices();
+    const uint32_t num_faces    = triangle_mesh.get()->GetNumFaces();
+
+    local_geom_id = raytracer_.AddTriangleMeshToLocalScene(
+        local_scene_id, vertices.data(), num_vertices, vertex_ids.data(),
+        num_faces);
+  } else if (mesh_ptr.index() == kCubicBezierCurveMesh) {
+    // Cubic Bezier Curve Mesh
+    const std::shared_ptr<CubicBezierCurveMesh> curve_mesh =
+        mpark::get<kCubicBezierCurveMesh>(mesh_ptr);
+
+    // BVH
+    const std::vector<float>& vertices   = curve_mesh->GetVertices();
+    const std::vector<uint32_t>& indices = curve_mesh->GetIndices();
+
+    const uint32_t num_vertices = curve_mesh->GetNumVertices();
+    const uint32_t num_indices  = curve_mesh->GetNumSegments();
+
+    local_geom_id = raytracer_.AddCubicBezierCurveMeshToLocalScene(
+        local_scene_id, vertices.data(), num_vertices, indices.data(),
+        num_indices);
+  } else {
+    (void)local_scene_id;
+  }
+
+  LocalScene* local_scene = local_scenes_.at(local_scene_id).get();
+
+  if (local_geom_id >= local_scene->meshes.size()) {
+    local_scene->meshes.resize(local_geom_id + 1);
+  }
+  local_scene->meshes[local_geom_id] = mesh_ptr;
+
+  return local_geom_id;
+}
+
 void Scene::AttachLightParamIdsToInstance(
     const uint32_t instance_id,
     const std::vector<std::vector<uint32_t>>& light_param_ids) {
@@ -31,82 +81,64 @@ void Scene::CommitScene(void) {
   raytracer_.GetSceneAABB(bmin_, bmax_);
 }
 
-uint32_t Scene::CreateInstance(const MeshPtr& mesh_ptr) {
+uint32_t Scene::CreateInstance(const uint32_t local_scene_id,
+                               const float transform[4][4]) {
+  assert(local_scene_id < local_scenes_.size());
+
   MeshInstance instance;
 
-  // Transform TODO
-  const float tranform[4][4] = {{1.0f, 0.0f, 0.0f, 0.0f},
-                                {0.0f, 1.0f, 0.0f, 0.0f},
-                                {0.0f, 0.0f, 1.0f, 0.0f},
-                                {0.0f, 0.0f, 0.0f, 1.0f}};
-
-  Matrix::Copy(tranform, instance.transform_lg);  // [NOTE] local to global
-  Matrix::Copy(tranform, instance.transform_gl);
+  Matrix::Copy(transform, instance.transform_lg);  // [NOTE] local to global
+  Matrix::Copy(transform, instance.transform_gl);
   Matrix::Inverse(instance.transform_gl);  // [NOTE] global to local
 
-  uint32_t instance_id = uint32_t(-1), local_scene_id = uint32_t(-1),
-           local_geom_id = uint32_t(-1);
+  LocalScene& local_scene = *(local_scenes_[local_scene_id]);
 
-  // Mesh
-  if (mesh_ptr.index() == kTriangleMesh) {
-    // Triangle Mesh
-    const std::shared_ptr<TriangleMesh> triangle_mesh =
-        mpark::get<kTriangleMesh>(mesh_ptr);
-    instance.meshes.emplace_back(mesh_ptr);
+  for (MeshPtr& mesh_ptr : local_scene.meshes) {
+    if (mesh_ptr.index() == kTriangleMesh) {
+      const std::shared_ptr<TriangleMesh> triangle_mesh =
+          mpark::get<kTriangleMesh>(mesh_ptr);
 
-    // Material
-    // TODO specify material ids
-    instance.material_ids.emplace_back(triangle_mesh.get()->GetMaterials());
+      // Material
+      // TODO specify material ids
+      instance.material_ids.emplace_back(triangle_mesh.get()->GetMaterials());
 
-    // Light
-    { instance.light_param_ids.emplace_back(); }
+      // Light
+      { instance.light_param_ids.emplace_back(); }
+    } else if (mesh_ptr.index() == kCubicBezierCurveMesh) {
+      // Cubic Bezier Curve Mesh
+      const std::shared_ptr<CubicBezierCurveMesh> curve_mesh =
+          mpark::get<kCubicBezierCurveMesh>(mesh_ptr);
 
-    // BVH
-    const std::vector<float>& vertices = triangle_mesh.get()->GetVertices();
-    const std::vector<uint32_t>& vertex_ids =
-        triangle_mesh.get()->GetVertexIds();
+      // Materilal
+      // TODO specify material ids
+      instance.material_ids.emplace_back(curve_mesh->GetMaterials());
 
-    const uint32_t num_vertices = triangle_mesh.get()->GetNumVertices();
-    const uint32_t num_faces    = triangle_mesh.get()->GetNumFaces();
-
-    raytracer_.RegisterNewTriangleMesh(
-        vertices.data(), num_vertices, vertex_ids.data(), num_faces, tranform,
-        &instance_id, &local_scene_id, &local_geom_id);
-  } else if (mesh_ptr.index() == kCubicBezierCurveMesh) {
-    // Cubic Bezier Curve Mesh
-    const std::shared_ptr<CubicBezierCurveMesh> curve_mesh =
-        mpark::get<kCubicBezierCurveMesh>(mesh_ptr);
-    instance.meshes.emplace_back(mesh_ptr);
-
-    // Materilal
-    // TODO specify material ids
-    instance.material_ids.emplace_back(curve_mesh->GetMaterials());
-
-    // Light
-    { instance.light_param_ids.emplace_back(); }
-
-    const std::vector<float>& vertices   = curve_mesh->GetVertices();
-    const std::vector<uint32_t>& indices = curve_mesh->GetIndices();
-
-    // BVH
-    const uint32_t num_vertices = curve_mesh->GetNumVertices();
-    const uint32_t num_indices  = curve_mesh->GetNumSegments();
-
-    raytracer_.RegisterNewCubicBezierCurveMesh(
-        vertices.data(), num_vertices, indices.data(), num_indices, tranform,
-        &instance_id, &local_scene_id, &local_geom_id);
-  } else {
-    (void)local_scene_id;
+      // Light
+      { instance.light_param_ids.emplace_back(); }
+    }
   }
 
+  instance.local_scene = local_scenes_[local_scene_id];
+
+  const uint32_t instance_id =
+      raytracer_.CreateInstanceFromLocalScene(local_scene_id, transform);
+
   // Register Instance
-  // TODO : local_scene_id, local_geom_id
-  assert(local_geom_id == 0);
   if (instance_id >= instances_.size()) {
     instances_.resize(instance_id + 1);
   }
   instances_[instance_id] = instance;
+
   return instance_id;
+}
+
+uint32_t Scene::CreateLocalScene(void) {
+  const uint32_t local_scene_id = raytracer_.CreateLocalScene();
+  if (local_scene_id >= local_scenes_.size()) {
+    local_scenes_.resize(local_scene_id + 1);
+  }
+  local_scenes_[local_scene_id].reset(new LocalScene);
+  return local_scene_id;
 }
 
 const LightManager* Scene::GetLightManager(void) const {
@@ -149,8 +181,8 @@ float3 Scene::FetchMeshShadingNormal(const TraceResult& trace_result) const {
   assert(trace_result.instance_id < instances_.size());
   const MeshInstance& instance = instances_[trace_result.instance_id];
 
-  assert(trace_result.geom_id < instance.meshes.size());
-  const MeshPtr& mesh_p = instance.meshes[trace_result.geom_id];
+  assert(trace_result.geom_id < instance.local_scene->meshes.size());
+  const MeshPtr& mesh_p = instance.local_scene->meshes[trace_result.geom_id];
 
   float3 ret;
   if (mesh_p.index() == kTriangleMesh) {
@@ -169,8 +201,8 @@ float2 Scene::FetchMeshTexcoord(const TraceResult& trace_result) const {
   assert(trace_result.instance_id < instances_.size());
   const MeshInstance& instance = instances_[trace_result.instance_id];
 
-  assert(trace_result.geom_id < instance.meshes.size());
-  const MeshPtr& mesh_p = instance.meshes[trace_result.geom_id];
+  assert(trace_result.geom_id < instance.local_scene->meshes.size());
+  const MeshPtr& mesh_p = instance.local_scene->meshes[trace_result.geom_id];
 
   float2 ret;
   if (mesh_p.index() == kTriangleMesh) {

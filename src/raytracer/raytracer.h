@@ -31,39 +31,52 @@ public:
 
   /**
    * @fn
-   * @brief register new triangle mesh. the buffer is shared
+   * @brief register new triangle mesh to local scene. the buffer is shared
+   * @param[in] local_scene_id target local scene id
    * @param[in] vertices vertices(xyz1 * num_vertices. padded)
    * @param[in] num_vertices num of vertices
    * @param[in] faces faces id (id0id1id2 * num_faces)
    * @param[in] num_faces num of faces
-   * @param[in] transform 4 x 4 matrix(sim3)
-   * @param[out] instance_id Triangle's instance id
-   * @param[out] local_scene_id the scene id include only this triangle mesh
-   * @param[out] local_geom_id geom id in the local scene
+   * @return local geom id
    */
-  void RegisterNewTriangleMesh(const float* vertices,
-                               const uint32_t num_vertices,
-                               const uint32_t* faces, const uint32_t num_faces,
-                               const float transform[4][4],
-                               uint32_t* instance_id, uint32_t* local_scene_id,
-                               uint32_t* local_geom_id);
+  uint32_t AddTriangleMeshToLocalScene(const uint32_t local_scene_id,
+                                       const float* vertices,
+                                       const uint32_t num_vertices,
+                                       const uint32_t* faces,
+                                       const uint32_t num_faces);
+
   /**
    * @fn
-   * @brief register new cubic bezier curve mesh. the buffer is shared
+   * @brief register new cubic bezier curve mesh to local scene. the buffer is
+   * shared
+   * @param[in] local_scene_id target local scene id
    * @param[in] vertices_thickness 4(xyz+thickness) * num vertices_
    * @param[in] num_vertices num of vertices
    * @param[in] indices indices
    * @param[in] num_segments number of segment
-   * @param[in] transform 4 x 4 matrix(sim3)
-   * @param[out] instance_id Triangle's instance id
-   * @param[out] local_scene_id the scene id include only this triangle mesh
-   * @param[out] local_geom_id geom id in the local scene
+   * @return local geom id
    */
-  void RegisterNewCubicBezierCurveMesh(
-      const float* vertices_thickness, const uint32_t num_vertices,
-      const uint32_t* indices, const uint32_t num_segments,
-      const float transform[4][4], uint32_t* instance_id,
-      uint32_t* local_scene_id, uint32_t* local_geom_id);
+
+  uint32_t AddCubicBezierCurveMeshToLocalScene(const uint32_t local_scene_id,
+                                               const float* vertices_thickness,
+                                               const uint32_t num_vertices,
+                                               const uint32_t* indices,
+                                               const uint32_t num_segments);
+
+  /**
+   * @fn
+   * @brief create new local scene
+   * @return local scene id
+   */
+  uint32_t CreateLocalScene(void);
+
+  /**
+   * @fn
+   * @brief create instance from local scene
+   * @return instance id
+   */
+  uint32_t CreateInstanceFromLocalScene(uint32_t local_scene_id,
+                                        const float transform[4][4]);
 
   /**
    * @fn

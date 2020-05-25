@@ -44,10 +44,12 @@ struct CyclesPrincipledBsdfParameter {
   float transmission_roughness     = static_cast<float>(0.0);
   uint32_t base_color_tex_id       = static_cast<uint32_t>(-1);
   uint32_t subsurface_color_tex_id = static_cast<uint32_t>(-1);
+
+  std::string name = "";
 };
 
 struct HairBsdfParameter {
-  enum ColoringHair { kRGB, kMelanin };
+  enum ColoringHair { kRGB = 0, kMelanin };
   ColoringHair coloring_hair = kMelanin;
   float3 base_color          = {0.18f, 0.06f, 0.02f};
 
@@ -65,9 +67,33 @@ struct HairBsdfParameter {
   float3 specular_tint        = {1.f, 1.f, 1.f};
   float3 second_specular_tint = {1.f, 1.f, 1.f};
   float3 transmission_tint    = {1.f, 1.f, 1.f};
+
+  std::string name = "";
 };
 
 using MaterialParameter =
     mpark::variant<CyclesPrincipledBsdfParameter, HairBsdfParameter>;
+
+inline void SetMaterialName(const std::string& name,
+                            MaterialParameter* material_param) {
+  if (material_param->index() == kCyclesPrincipledBsdfParameter) {
+    mpark::get<kCyclesPrincipledBsdfParameter>(*material_param).name = name;
+  } else if (material_param->index() == kHairBsdfParameter) {
+    mpark::get<kHairBsdfParameter>(*material_param).name = name;
+  } else {
+    assert(false);
+  }
+}
+
+inline std::string GetMaterialName(const MaterialParameter& material_param) {
+  if (material_param.index() == kCyclesPrincipledBsdfParameter) {
+    return mpark::get<kCyclesPrincipledBsdfParameter>(material_param).name;
+  } else if (material_param.index() == kHairBsdfParameter) {
+    return mpark::get<kHairBsdfParameter>(material_param).name;
+  } else {
+    assert(false);
+  }
+  return "";
+}
 }  // namespace pbrlab
 #endif  // PBRLAB_MAfloatERIAL_PARAM_H_

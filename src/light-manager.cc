@@ -82,14 +82,15 @@ void LightManager::RegisterInstanceMesh(const MeshInstance& instance,
 
   auto& area_lights = area_lights_[instance_id];
 
-  if (area_lights.size() <= instance.meshes.size())
-    area_lights.resize(instance.meshes.size());
+  if (area_lights.size() <= instance.local_scene->meshes.size())
+    area_lights.resize(instance.local_scene->meshes.size());
 
-  assert(instance.meshes.size() == instance.light_param_ids.size());
+  assert(instance.local_scene->meshes.size() ==
+         instance.light_param_ids.size());
 
-  for (uint32_t local_geom_id = 0; local_geom_id < instance.meshes.size();
-       ++local_geom_id) {
-    const MeshPtr mesh_ptr = instance.meshes[local_geom_id];
+  for (uint32_t local_geom_id = 0;
+       local_geom_id < instance.local_scene->meshes.size(); ++local_geom_id) {
+    const MeshPtr mesh_ptr = instance.local_scene->meshes[local_geom_id];
     const std::vector<uint32_t>& light_param_ids =
         instance.light_param_ids[local_geom_id];
 

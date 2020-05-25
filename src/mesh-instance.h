@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "local-scene.h"
 #include "mesh/cubic-bezier-curve-mesh.h"
 #include "mesh/triangle-mesh.h"
 
@@ -19,12 +20,8 @@
 
 namespace pbrlab {
 
-enum MeshType { kTriangleMesh = 0, kCubicBezierCurveMesh, kMeshNone };
-using MeshPtr = mpark ::variant<std::shared_ptr<TriangleMesh>,
-                                std::shared_ptr<CubicBezierCurveMesh>>;
-
 struct MeshInstance {
-  std::vector<MeshPtr> meshes;
+  std::shared_ptr<LocalScene> local_scene;
   std::vector<std::vector<uint32_t>> material_ids;
   std::vector<std::vector<uint32_t>>
       light_param_ids;  // If light_param_ids[i].size() is

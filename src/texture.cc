@@ -8,8 +8,13 @@ namespace pbrlab {
 
 Texture::Texture(void) : width_(0), height_(0), channels_(0) {}
 Texture::Texture(const std::vector<float>& pixels, const uint32_t width,
-                 const uint32_t height, const uint32_t channels)
-    : width_(width), height_(height), channels_(channels), pixels_(pixels) {
+                 const uint32_t height, const uint32_t channels,
+                 const std::string& name)
+    : width_(width),
+      height_(height),
+      channels_(channels),
+      pixels_(pixels),
+      name_(name) {
   // TODO error processing
   assert(width_ * height_ * channels_ == pixels_.size());
 }
@@ -28,9 +33,12 @@ bool Texture::Reset(const std::vector<float>& pixels, const uint32_t width,
   return true;
 }
 
+void Texture::SetName(const std::string& name) { name_ = name; }
+
 uint32_t Texture::GetWidth(void) const { return width_; }
 uint32_t Texture::GetHeight(void) const { return height_; }
 uint32_t Texture::GetChannels(void) const { return channels_; }
+std::string Texture::GetName(void) const { return name_; }
 
 void Texture::FetchFloatN(const float u, const float v, const uint32_t n,
                           float* dst) const {

@@ -158,7 +158,16 @@ static bool CreateSceneFromObj(const std::string& obj_filename,
 
     const pbrlab::MeshPtr mesh_ptr = scene->AddTriangleMesh(triangle_mesh);
 
-    const uint32_t instance_id = scene->CreateInstance(mesh_ptr);
+    const uint32_t local_scene_id = scene->CreateLocalScene();
+    scene->AddMeshToLocalScene(local_scene_id, mesh_ptr);
+    // Transform TODO
+    const float transform[4][4] = {{1.0f, 0.0f, 0.0f, 0.0f},
+                                   {0.0f, 1.0f, 0.0f, 0.0f},
+                                   {0.0f, 0.0f, 1.0f, 0.0f},
+                                   {0.0f, 0.0f, 0.0f, 1.0f}};
+
+    const uint32_t instance_id =
+        scene->CreateInstance(local_scene_id, transform);
 
     if (triangle_mesh.GetName().substr(0, 5) == "light") {
       pbrlab::AreaLightParameter area_light_param = {};
@@ -208,7 +217,17 @@ static bool CreateSceneFromCubicBezierCurve(const std::string& filepath,
 
     const pbrlab::MeshPtr mesh_ptr = scene->AddCubicBezierCurveMesh(curve_mesh);
 
-    const uint32_t instance_id = scene->CreateInstance(mesh_ptr);
+    const uint32_t local_scene_id = scene->CreateLocalScene();
+    scene->AddMeshToLocalScene(local_scene_id, mesh_ptr);
+    // Transform TODO
+    const float transform[4][4] = {{1.0f, 0.0f, 0.0f, 0.0f},
+                                   {0.0f, 1.0f, 0.0f, 0.0f},
+                                   {0.0f, 0.0f, 1.0f, 0.0f},
+                                   {0.0f, 0.0f, 0.0f, 1.0f}};
+
+    const uint32_t instance_id =
+        scene->CreateInstance(local_scene_id, transform);
+
     (void)instance_id;
   }
 

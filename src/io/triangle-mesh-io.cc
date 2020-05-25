@@ -95,10 +95,10 @@ static uint32_t LoadTexture(const std::string& filepath,
     std::vector<float> tmp;
     SrgbToLiner(pixels, width, height, channels, &tmp);
     textures->emplace_back(tmp, uint32_t(width), uint32_t(height),
-                           uint32_t(channels));
+                           uint32_t(channels), filepath);
   } else {
     textures->emplace_back(pixels, uint32_t(width), uint32_t(height),
-                           uint32_t(channels));
+                           uint32_t(channels), filepath);
   }
 
   return tex_id;

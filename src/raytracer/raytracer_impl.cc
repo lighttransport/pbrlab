@@ -43,22 +43,6 @@ static void IntersectionFilter(const RTCFilterFunctionNArguments* args) {
   // TODO
 }
 
-// NOTE : This function do not release geoms
-// return local scene and local geom ids
-static RTCScene CreateNewLocalScene(RTCDevice embree_device,
-                                    const std::vector<RTCGeometry>& geoms) {
-  RTCScene local_scene = rtcNewScene(embree_device);
-
-  for (size_t i = 0; i < geoms.size(); i++) {
-    const auto& geom = geoms[i];
-    rtcAttachGeometryByID(local_scene, geom, static_cast<uint32_t>(i));
-  }
-  // TODO : delete ?
-  rtcCommitScene(local_scene);
-
-  return local_scene;
-}
-
 uint32_t Raytracer::Impl::CreateInstanceFromLocalScene(
     uint32_t local_scene_id, const float transform[4][4]) {
   float transform_[4][4];
@@ -91,13 +75,22 @@ uint32_t Raytracer::Impl::CreateInstanceFromLocalScene(
 
   rtcReleaseGeometry(instance);
 
+  rtcCommitScene(embree_global_scene_);
+
   return instance_id;
 }
 
-void Raytracer::Impl::RegisterNewTriangleMesh(
-    const float* vertices, const uint32_t num_vertices, const uint32_t* faces,
-    const uint32_t num_faces, const float transform[4][4],
-    uint32_t* instance_id, uint32_t* local_scene_id, uint32_t* local_geom_id) {
+uint32_t Raytracer::Impl::CreateLocalScene(void) {
+  const uint32_t local_scene_id = uint32_t(local_scenes_.size());
+  local_scenes_.emplace_back();
+  local_scenes_.back().embree_scene = rtcNewScene(embree_device_);
+  return local_scene_id;
+}
+
+uint32_t Raytracer::Impl::AddTriangleMeshToLocalScene(
+    const uint32_t local_scene_id, const float* vertices,
+    const uint32_t num_vertices, const uint32_t* faces,
+    const uint32_t num_faces) {
   RTCGeometry geom = rtcNewGeometry(embree_device_, RTC_GEOMETRY_TYPE_TRIANGLE);
 
   const uint32_t triangle_mesh_id =
@@ -125,37 +118,31 @@ void Raytracer::Impl::RegisterNewTriangleMesh(
   rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
   rtcCommitGeometry(geom);
 
-  std::vector<RTCGeometry> v_geom = {geom};
+  LocalScene& local_scene           = local_scenes_.at(local_scene_id);
+  const RTCScene local_scene_embree = local_scene.embree_scene;
 
-  RTCScene local_scene = CreateNewLocalScene(embree_device_, v_geom);
+  const uint32_t local_geom_id = uint32_t(local_scene.mesh_data_ids.size());
+
+  local_scene.mesh_data_ids.emplace_back(kTriangleMesh, triangle_mesh_id);
+
+  rtcAttachGeometryByID(local_scene_embree, geom, local_geom_id);
+
+  rtcCommitScene(local_scene_embree);
+
   rtcReleaseGeometry(geom);
 
-  *local_scene_id = static_cast<uint32_t>(local_scenes_.size());
-  local_scenes_.emplace_back();
-  local_scenes_.back().embree_scene = local_scene;
-  *local_geom_id                    = 0u;
-  local_scenes_.back().mesh_data_ids.emplace_back(kTriangleMesh,
-                                                  triangle_mesh_id);
-
-  *instance_id = CreateInstanceFromLocalScene(*local_scene_id, transform);
-
-  triangle_mesh.embree_local_scene_id = *local_scene_id;
-  triangle_mesh.embree_local_geom_id  = *local_geom_id;
-
-  // TODO later
-  rtcCommitScene(embree_global_scene_);
+  return local_geom_id;
 }
 
-void Raytracer::Impl::RegisterNewCubicBezierCurveMesh(
-    const float* vertices_thickness, const uint32_t num_vertices,
-    const uint32_t* indices, const uint32_t num_segments,
-    const float transform[4][4], uint32_t* instance_id,
-    uint32_t* local_scene_id, uint32_t* local_geom_id) {
+uint32_t Raytracer::Impl::AddCubicBezierCurveMeshToLocalScene(
+    const uint32_t local_scene_id, const float* vertices_thickness,
+    const uint32_t num_vertices, const uint32_t* indices,
+    const uint32_t num_segments) {
   RTCGeometry geom =
       rtcNewGeometry(embree_device_, RTC_GEOMETRY_TYPE_FLAT_BEZIER_CURVE);
 
   const uint32_t cubic_bezier_curve_mesh_id =
-      static_cast<uint32_t>(cubic_bezier_curve_meshes_.size());
+      uint32_t(cubic_bezier_curve_meshes_.size());
 
   cubic_bezier_curve_meshes_.emplace_back();
   CubicBezierCurveMesh& cubic_bezier_curve_mesh =
@@ -176,25 +163,20 @@ void Raytracer::Impl::RegisterNewCubicBezierCurveMesh(
   rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
   rtcCommitGeometry(geom);
 
-  std::vector<RTCGeometry> v_geom = {geom};
+  LocalScene& local_scene           = local_scenes_[local_scene_id];
+  const RTCScene local_scene_embree = local_scene.embree_scene;
 
-  RTCScene local_scene = CreateNewLocalScene(embree_device_, v_geom);
+  const uint32_t local_geom_id = uint32_t(local_scene.mesh_data_ids.size());
+  local_scene.mesh_data_ids.emplace_back(kCubicBezierCurveMesh,
+                                         cubic_bezier_curve_mesh_id);
+
+  rtcAttachGeometryByID(local_scene_embree, geom, local_geom_id);
+
+  rtcCommitScene(local_scene_embree);
+
   rtcReleaseGeometry(geom);
 
-  *local_scene_id = static_cast<uint32_t>(local_scenes_.size());
-  local_scenes_.emplace_back();
-  local_scenes_.back().embree_scene = local_scene;
-  *local_geom_id                    = 0u;
-  local_scenes_.back().mesh_data_ids.emplace_back(kCubicBezierCurveMesh,
-                                                  cubic_bezier_curve_mesh_id);
-
-  *instance_id = CreateInstanceFromLocalScene(*local_scene_id, transform);
-
-  cubic_bezier_curve_mesh.embree_local_scene_id = *local_scene_id;
-  cubic_bezier_curve_mesh.embree_local_geom_id  = *local_geom_id;
-
-  // TODO later
-  rtcCommitScene(embree_global_scene_);
+  return local_geom_id;
 }
 
 bool Raytracer::Impl::GetSceneAABB(float* bmin, float* bmax) const {
