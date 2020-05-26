@@ -57,6 +57,10 @@ public:
       const uint32_t instance_id,
       const std::vector<std::vector<uint32_t>>& light_param_ids);
 
+  void AttachMaterialParamIdsToInstance(
+      const uint32_t instance_id,
+      const std::vector<std::vector<uint32_t>>& material_ids);
+
   void CommitScene(void);
 
   uint32_t CreateInstance(const uint32_t local_scene_id,
@@ -64,6 +68,7 @@ public:
 
   uint32_t CreateLocalScene(void);
 
+  const MeshInstance& GetMeshInstance(const uint32_t instance_id) const;
   const LightManager* GetLightManager(void) const;
   const Texture* GetTexture(const uint32_t tex_id) const;
 

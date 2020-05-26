@@ -71,6 +71,28 @@ void Scene::AttachLightParamIdsToInstance(
   instance.light_param_ids = light_param_ids;
 }
 
+void Scene::AttachMaterialParamIdsToInstance(
+    const uint32_t instance_id,
+    const std::vector<std::vector<uint32_t>>& material_ids) {
+  MeshInstance& instance = instances_.at(instance_id);
+
+  if (instance.local_scene.get()->meshes.size() != material_ids.size()) {
+    throw std::runtime_error("material param error");
+  }
+
+  for (uint32_t mesh_id = 0; mesh_id < material_ids.size(); ++mesh_id) {
+    const MeshPtr& mesh_ptr = instance.local_scene->meshes[mesh_id];
+
+    const uint32_t num_primitive = GetNumPrimitive(mesh_ptr);
+
+    if (material_ids[mesh_id].size() != num_primitive) {
+      throw std::runtime_error("material param error");
+    }
+  }
+
+  instance.material_ids = material_ids;
+}
+
 void Scene::CommitScene(void) {
   for (uint32_t i = 0; i < instances_.size(); ++i) {
     light_manager_->RegisterInstanceMesh(instances_[i], i);
@@ -139,6 +161,14 @@ uint32_t Scene::CreateLocalScene(void) {
   }
   local_scenes_[local_scene_id].reset(new LocalScene);
   return local_scene_id;
+}
+
+const MeshInstance& Scene::GetMeshInstance(const uint32_t instance_id) const {
+#ifdef NDEBUG
+  return instances_[instance_id];
+#else
+  return instances_.at(instance_id);
+#endif
 }
 
 const LightManager* Scene::GetLightManager(void) const {

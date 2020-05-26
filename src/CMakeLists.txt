@@ -11,6 +11,7 @@ set(PBRLAB_SOURCES
     io/cyhair.cc
     io/image-io.cc
     io/render-config-io.cc
+    io/scene-description-io.cc
     io/stb_image.cc
     io/stb_image_write.cc
     io/tinyexr.cc
@@ -20,6 +21,7 @@ set(PBRLAB_SOURCES
     mesh/cubic-bezier-curve-mesh.cc
     raytracer/raytracer.cc
     raytracer/raytracer_impl.cc
+    scene-description/scene-description.cc
     shader/cycles-principled-shader.cc
     shader/hair-shader.cc
     shader/shader.cc
