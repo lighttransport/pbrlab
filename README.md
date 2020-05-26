@@ -34,6 +34,10 @@ $ sudo apt install clang cmake
 $ sudo apt install libgl1-mesa-dev libglu1-mesa-dev
 $ sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 ```
+#### Optional
+```
+$ sudo apt install ccache
+```
 
 ## Building
 
