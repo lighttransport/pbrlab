@@ -145,69 +145,77 @@ static MaterialParameter ParseTinyObjMaterial(
     std::vector<Texture>* textures) {
   MaterialParameter ret;
 
-  CyclesPrincipledBsdfParameter cycles_principled_bsdf_parameter;
+  {
+    CyclesPrincipledBsdfParameter cycles_principled_bsdf_parameter;
 
-  ConvertTinyObjMaterialFloat3("base_color", material,
-                               cycles_principled_bsdf_parameter.base_color.v);
+    ConvertTinyObjMaterialFloat3("base_color", material,
+                                 cycles_principled_bsdf_parameter.base_color.v);
 
-  LoadTextureFromTinyObjMaterial(
-      "map_base_color", material, base_dir,
-      &(cycles_principled_bsdf_parameter.base_color_tex_id), textures);
+    LoadTextureFromTinyObjMaterial(
+        "map_base_color", material, base_dir,
+        &(cycles_principled_bsdf_parameter.base_color_tex_id), textures);
 
-  ConvertTinyObjMaterialFloat("subsurface", material,
-                              &(cycles_principled_bsdf_parameter.subsurface));
+    ConvertTinyObjMaterialFloat("subsurface", material,
+                                &(cycles_principled_bsdf_parameter.subsurface));
 
-  ConvertTinyObjMaterialFloat3(
-      "subsurface_radius", material,
-      cycles_principled_bsdf_parameter.subsurface_radius.v);
-  ConvertTinyObjMaterialFloat3(
-      "subsurface_color", material,
-      cycles_principled_bsdf_parameter.subsurface_color.v);
+    ConvertTinyObjMaterialFloat3(
+        "subsurface_radius", material,
+        cycles_principled_bsdf_parameter.subsurface_radius.v);
+    ConvertTinyObjMaterialFloat3(
+        "subsurface_color", material,
+        cycles_principled_bsdf_parameter.subsurface_color.v);
 
-  LoadTextureFromTinyObjMaterial(
-      "map_subsurface_color", material, base_dir,
-      &(cycles_principled_bsdf_parameter.subsurface_color_tex_id), textures);
+    LoadTextureFromTinyObjMaterial(
+        "map_subsurface_color", material, base_dir,
+        &(cycles_principled_bsdf_parameter.subsurface_color_tex_id), textures);
 
-  ConvertTinyObjMaterialFloat("metallic", material,
-                              &(cycles_principled_bsdf_parameter.metallic));
+    ConvertTinyObjMaterialFloat("metallic", material,
+                                &(cycles_principled_bsdf_parameter.metallic));
 
-  ConvertTinyObjMaterialFloat("specular", material,
-                              &(cycles_principled_bsdf_parameter.specular));
+    ConvertTinyObjMaterialFloat("specular", material,
+                                &(cycles_principled_bsdf_parameter.specular));
 
-  ConvertTinyObjMaterialFloat(
-      "specular_tint", material,
-      &(cycles_principled_bsdf_parameter.specular_tint));
+    ConvertTinyObjMaterialFloat(
+        "specular_tint", material,
+        &(cycles_principled_bsdf_parameter.specular_tint));
 
-  ConvertTinyObjMaterialFloat("roughness", material,
-                              &(cycles_principled_bsdf_parameter.roughness));
+    ConvertTinyObjMaterialFloat("roughness", material,
+                                &(cycles_principled_bsdf_parameter.roughness));
 
-  ConvertTinyObjMaterialFloat("anisotropic", material,
-                              &(cycles_principled_bsdf_parameter.anisotropic));
-  ConvertTinyObjMaterialFloat(
-      "anisotropic_rotation", material,
-      &(cycles_principled_bsdf_parameter.anisotropic_rotation));
+    ConvertTinyObjMaterialFloat(
+        "anisotropic", material,
+        &(cycles_principled_bsdf_parameter.anisotropic));
+    ConvertTinyObjMaterialFloat(
+        "anisotropic_rotation", material,
+        &(cycles_principled_bsdf_parameter.anisotropic_rotation));
 
-  ConvertTinyObjMaterialFloat("sheen", material,
-                              &(cycles_principled_bsdf_parameter.sheen));
-  ConvertTinyObjMaterialFloat("sheen_tint", material,
-                              &(cycles_principled_bsdf_parameter.sheen_tint));
+    ConvertTinyObjMaterialFloat("sheen", material,
+                                &(cycles_principled_bsdf_parameter.sheen));
+    ConvertTinyObjMaterialFloat("sheen_tint", material,
+                                &(cycles_principled_bsdf_parameter.sheen_tint));
 
-  ConvertTinyObjMaterialFloat("clearcoat", material,
-                              &(cycles_principled_bsdf_parameter.clearcoat));
-  ConvertTinyObjMaterialFloat(
-      "clearcoat_roughness", material,
-      &(cycles_principled_bsdf_parameter.clearcoat_roughness));
+    ConvertTinyObjMaterialFloat("clearcoat", material,
+                                &(cycles_principled_bsdf_parameter.clearcoat));
+    ConvertTinyObjMaterialFloat(
+        "clearcoat_roughness", material,
+        &(cycles_principled_bsdf_parameter.clearcoat_roughness));
 
-  ConvertTinyObjMaterialFloat("ior", material,
-                              &(cycles_principled_bsdf_parameter.ior));
+    ConvertTinyObjMaterialFloat("ior", material,
+                                &(cycles_principled_bsdf_parameter.ior));
 
-  ConvertTinyObjMaterialFloat("transmission", material,
-                              &(cycles_principled_bsdf_parameter.transmission));
-  ConvertTinyObjMaterialFloat(
-      "transmission_roughness", material,
-      &(cycles_principled_bsdf_parameter.transmission_roughness));
+    ConvertTinyObjMaterialFloat(
+        "transmission", material,
+        &(cycles_principled_bsdf_parameter.transmission));
+    ConvertTinyObjMaterialFloat(
+        "transmission_roughness", material,
+        &(cycles_principled_bsdf_parameter.transmission_roughness));
 
-  ret = cycles_principled_bsdf_parameter;
+    ret = cycles_principled_bsdf_parameter;
+  }
+
+  // Set Name
+  SetMaterialName(material.name, &ret);
+
   return ret;
 }
 

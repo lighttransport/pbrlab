@@ -677,7 +677,9 @@ static void MaterialUI(ImGuiParameter *imgui_parameter, pbrlab::Scene *scene,
     std::vector<std::string> &mtl_names = imgui_parameter->mtl_names;
     mtl_names.resize(materials->size());
     for (size_t i = 0; i < materials->size(); i++) {
-      mtl_names[i] = std::to_string(i);  // TODO mtl name
+      const std::string name = pbrlab::GetMaterialName((*materials)[i]);
+
+      mtl_names[i] = name;
     }
 
     // Editing material selector
