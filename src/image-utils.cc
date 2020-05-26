@@ -117,8 +117,8 @@ void BilinearFilter(const std::vector<float>& image, const size_t width,
     vv = std::min(vv, 1.0f);
   }
 
-  const float px = width * uu;
-  const float py = height * vv;
+  const float px = float(width) * uu;
+  const float py = float(height) * vv;
 
   const int x0 = std::max(0, std::min(int(width) - 1, int(px)));
   const int y0 = std::max(0, std::min(int(height) - 1, int(py)));

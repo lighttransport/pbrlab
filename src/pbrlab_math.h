@@ -113,7 +113,7 @@ const double kM_PI_2 = 1.57079632679489661923;
 const double kM_LN2  = 0.69314718055994530942;
 
 /// Fused multiply and add: (a*b + c)
-static inline float Madd(float a, float b, float c) {
+inline float Madd(float a, float b, float c) {
   // C++11 defines std::fma, which we assume is implemented using an
   // intrinsic.
   return std::fma(a, b, c);
@@ -123,7 +123,7 @@ static inline float Madd(float a, float b, float c) {
 }
 
 /// Round to nearest integer, returning as an int.
-static inline int FastRint(float x) {
+inline int FastRint(float x) {
   // used by sin/cos/tan range reduction
   // single roundps instruction on SSE4.1+ (for gcc/clang at least)
   return static_cast<int>(std::rint(x));
@@ -132,14 +132,14 @@ static inline int FastRint(float x) {
   // return static_cast<int>(x + std::copysign(0.5f, x));
 }
 
-static inline float FastSin(float x) {
+inline float FastSin(float x) {
   // very accurate argument reduction from SLEEF
   // starts failing around x=262000
   // Results on: [-2pi,2pi]
   // Examined 2173837240 values of sin: 0.00662760244 avg ulp diff, 2 max
   // ulp, 1.19209e-07 max error
   int q    = FastRint(x * float(kM_1_PI));
-  float qf = q;
+  float qf = float(q);
   x        = Madd(qf, -0.78515625f * 4, x);
   x        = Madd(qf, -0.00024187564849853515625f * 4, x);
   x        = Madd(qf, -3.7747668102383613586e-08f * 4, x);
@@ -161,10 +161,10 @@ static inline float FastSin(float x) {
   return u;
 }
 
-static inline float FastCos(float x) {
+inline float FastCos(float x) {
   // same argument reduction as FastSin
   int q    = FastRint(x * float(kM_1_PI));
-  float qf = q;
+  float qf = float(q);
   x        = Madd(qf, -0.78515625f * 4, x);
   x        = Madd(qf, -0.00024187564849853515625f * 4, x);
   x        = Madd(qf, -3.7747668102383613586e-08f * 4, x);
@@ -184,10 +184,10 @@ static inline float FastCos(float x) {
   return u;
 }
 
-static inline void FastSincos(float x, float* sine, float* cosine) {
+inline void FastSincos(float x, float* sine, float* cosine) {
   // same argument reduction as FastSin
   int q    = FastRint(x * float(kM_1_PI));
-  float qf = q;
+  float qf = float(q);
   x        = Madd(qf, -0.78515625f * 4, x);
   x        = Madd(qf, -0.00024187564849853515625f * 4, x);
   x        = Madd(qf, -3.7747668102383613586e-08f * 4, x);
@@ -219,7 +219,7 @@ inline float FastExp2(const float& xval) {
   float x = Clamp(xval, -126.0f, 126.0f);
   // range reduction
   int m = int(x);
-  x -= m;
+  x -= float(m);
   x = 1.0f - (1.0f - x);  // crush denormals (does not affect max ulps!)
   // 5th degree polynomial generated with sollya
   // Examined 2247622658 values of exp2 on [-126,126]: 2.75764912 avg ulp diff,
@@ -245,7 +245,7 @@ inline T FastExp(const T& x) {
   return FastExp2(x * T(1 / kM_LN2));
 }
 
-static inline float FastAtan2(const float y, const float x) {
+inline float FastAtan2(const float y, const float x) {
   // based on atan approximation above
   // the special cases around 0 and infinity were tested explicitly
   // the only case not handled correctly is x=NaN,y=0 which returns 0 instead of
@@ -331,7 +331,7 @@ inline float FastLog2(const float& xval) {
   hi       = Madd(f, hi, 0.24187369696082f);
   hi       = Madd(f, hi, -0.34730547155299f);
   lo       = Madd(f, lo, 1.442689881667200f);
-  return ((f4 * hi) + (f * lo)) + exponent;
+  return ((f4 * hi) + (f * lo)) + float(exponent);
 }
 
 inline float FastLog(const float& x) {

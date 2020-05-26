@@ -47,10 +47,10 @@ int main(int argc, char** argv) {
   std::vector<float> color(width * height * 4);
 
   for (size_t i = 0; i < layer.count.size(); ++i) {
-    color[i * 4 + 0] = layer.rgba[i * 4 + 0] / layer.count[i];
-    color[i * 4 + 1] = layer.rgba[i * 4 + 1] / layer.count[i];
-    color[i * 4 + 2] = layer.rgba[i * 4 + 2] / layer.count[i];
-    color[i * 4 + 3] = layer.rgba[i * 4 + 3] / layer.count[i];
+    color[i * 4 + 0] = layer.rgba[i * 4 + 0] / float(layer.count[i]);
+    color[i * 4 + 1] = layer.rgba[i * 4 + 1] / float(layer.count[i]);
+    color[i * 4 + 2] = layer.rgba[i * 4 + 2] / float(layer.count[i]);
+    color[i * 4 + 3] = layer.rgba[i * 4 + 3] / float(layer.count[i]);
   }
 
   pbrlab::LinerToSrgb(color, width, height, 4, &color);

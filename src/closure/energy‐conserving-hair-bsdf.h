@@ -271,7 +271,7 @@ inline float TrimmedLogistic(const float x, const float s, const float a,
 }
 
 inline float Phi(const int p, const float gamma_o, const float gamma_t) {
-  return 2.0f * p * gamma_t - 2.0f * gamma_o + p * kPi;
+  return 2.0f * float(p) * gamma_t - 2.0f * gamma_o + float(p) * kPi;
 }
 
 inline float Fmod(const float a, const float b) {

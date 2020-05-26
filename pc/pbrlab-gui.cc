@@ -75,10 +75,14 @@ static void BufferUpdater(const pbrlab::RenderLayer& layer,
             tmp[px_id * 4 + 2] = 0.f;
             tmp[px_id * 4 + 3] = 1.f;
           } else {
-            tmp[px_id * 4 + 0] = layer.rgba[px_id * 4 + 0] / layer.count[px_id];
-            tmp[px_id * 4 + 1] = layer.rgba[px_id * 4 + 1] / layer.count[px_id];
-            tmp[px_id * 4 + 2] = layer.rgba[px_id * 4 + 2] / layer.count[px_id];
-            tmp[px_id * 4 + 3] = layer.rgba[px_id * 4 + 3] / layer.count[px_id];
+            tmp[px_id * 4 + 0] =
+                layer.rgba[px_id * 4 + 0] / float(layer.count[px_id]);
+            tmp[px_id * 4 + 1] =
+                layer.rgba[px_id * 4 + 1] / float(layer.count[px_id]);
+            tmp[px_id * 4 + 2] =
+                layer.rgba[px_id * 4 + 2] / float(layer.count[px_id]);
+            tmp[px_id * 4 + 3] =
+                layer.rgba[px_id * 4 + 3] / float(layer.count[px_id]);
           }
         }
       });

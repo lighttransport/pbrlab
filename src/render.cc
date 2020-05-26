@@ -154,8 +154,8 @@ static uint32_t RenderingTile(const Scene& scene, const uint32_t num_sample,
   const float y_corner =
       (bmax[1] + bmin[1]) * 0.5f + vertical_screen_size * 0.5f;
   const float z_corner = bmax[2];
-  const float dx       = horizontal_screen_size / layer->width;
-  const float dy       = vertical_screen_size / layer->height;
+  const float dx       = horizontal_screen_size / float(layer->width);
+  const float dy       = vertical_screen_size / float(layer->height);
 
   for (uint32_t sample = 0; sample < num_sample; ++sample) {
     for (uint32_t y = render_tile.sy; y < render_tile.ty; y++) {
