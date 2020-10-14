@@ -268,6 +268,7 @@ inline bool RandomWalkSubsurface(const Scene& scene,
   float3 sigma_t, sigma_s;
   float3 throughput(1.0f);
 
+  // FIXME(LTE): radius value is different from Cycles
   ComputeScatteringCoefficient(weight, albedo, radius, &sigma_t, &sigma_s,
                                &throughput);
 
