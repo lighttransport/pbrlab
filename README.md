@@ -6,7 +6,7 @@
 
 `pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation.
 
-`pbrlab` is good for your verify your renderer and PBR shading.
+`pbrlab` is good for verifying your renderer and PBR shading.
 
 ## Features
 
@@ -127,6 +127,10 @@ $ pbrtlab input.obj input.hair
   * [x] Pinhole camera
   * [ ] Thin lens camera
   * [ ] realistic camera
+* GPU acceleration
+  * [ ] OptiX
+  * [ ] HIP RT
+  * [ ] Vulkan RT
 
 ## FIXME
 
