@@ -66,13 +66,19 @@ $ make
 
 ## How to run
 
+Run demo scene.
+
+```
+$ pbrlab data/cornellbox_suzanne_lucy.obj
+```
+
 Surface mesh only.
 
 ```
 $ pbrtlab input.obj
 ```
 
-Hair only(cyhair format).
+Hair only(cyhair format. Download here http://www.cemyuksel.com/research/hairmodels/).
 
 ```
 $ pbrtlab input.hair
