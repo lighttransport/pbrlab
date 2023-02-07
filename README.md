@@ -2,7 +2,9 @@
 
 ![pbr-sss](pbr-sss.png)
 
-![pbr-hair](pbr-hair.mp4)
+
+https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be06-7e4e81b66743.mp4
+
 
 `pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation.
 
