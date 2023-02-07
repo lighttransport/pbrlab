@@ -1,5 +1,9 @@
 # PBR lab
 
+![pbr-sss](pbr-sss.png)
+
+![pbr-hair](pbr-hair.mp4)
+
 `pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation.
 
 `pbrlab` is good for your verify your renderer and PBR shading.
@@ -29,14 +33,25 @@
 ## Install Dependencies
 
 ### Ubuntu
+
 ```
 $ sudo apt install clang cmake
 $ sudo apt install libgl1-mesa-dev libglu1-mesa-dev
 $ sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+
 ```
 #### Optional
+
 ```
 $ sudo apt install ccache
+```
+
+## Setup
+
+Checkout submodules
+
+```
+$ git submodule update --init --recursive
 ```
 
 ## Building
@@ -47,21 +62,43 @@ $ cd build
 $ make
 ```
 
+## How to run
+
+Surface mesh only.
+
+```
+$ pbrtlab input.obj
+```
+
+Hair only(cyhair format).
+
+```
+$ pbrtlab input.hair
+```
+
+Mesh and Hair.
+
+```
+$ pbrtlab input.obj input.hair
+```
+
+(No xform/scene graph support at the moment)
+
 ## TODO
 
 * [ ] Log
   * [ ] nanolog
 * [ ] Interactive GUI
   * [x] Draw rendering
-  * [ ] ImGui UI
+  * [x] ImGui UI
 * [ ] Curve Mesh
-  * [ ] CyHair loader
+  * [x] CyHair loader
   * [ ] xpd loader
 * [ ] Cycles's Principled Bsdf
   * [x] Lambert
   * [ ] Principled diffuse
   * [x] Subsurface
-    * [ ] BSSRDF
+    * [ ] Diffusion model
     * [x] Random walk SSS
       * [ ] Henyey Greenstein
       * [ ] single instance intersect
@@ -71,13 +108,16 @@ $ make
     * [ ] refraction
   * [ ] sheen
 * [ ] Arnold Standard Shader
-* [ ] Principled Hair Bsdf
+* [x] Principled Hair Bsdf
 * [ ] config file
 * [ ] Scene file
   * [ ] json
   * [x] obj
   * [ ] gltf
+  * [ ] USD
 * [ ] Texture
+  * [x] jpg, png
+  * [x] OpenEXR
 * [ ] Light
   * [x] Area light
   * [ ] Point light
@@ -89,16 +129,18 @@ $ make
   * [ ] realistic camera
 
 ## FIXME
+
 * [ ] Random walk SSS -> Differs from Cycles results
 * [ ] clearcoat -> Clearcoat component is too small
-
 
 ## License
 
 pbrlab is licensed under MIT license.
 
 The following files are derived from these;
+
 * src/closure/microface-ggx.h: Open Shading Language (3-clause BSD license)
+* Principled BSDF, Principled Hair BSDF. Based on Cycles' code. Apache 2.0 license.
 
 ### Third party license
 
@@ -122,3 +164,4 @@ The following files are derived from these;
 * Cycles : Apache 2.0 license
 * OpenShadingLanguage : BSD-3 license. 
 * OpenImageIO : BSD-3 license
+* miniz: MIT license. https://github.com/richgel999/miniz

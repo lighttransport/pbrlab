@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 set(BUILD_TARGET "pbrlab")
 project(${BUILD_TARGET} LANGUAGES C CXX)
@@ -6,8 +6,8 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 # options
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
-option(PBRLAB_WITH_EMBREE "Use Embree for faster ray tracing." ON)
-option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by external linking) submodule for faster ray tracing." OFF)
+option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
+option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
 
 # cmake modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)

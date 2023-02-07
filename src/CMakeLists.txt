@@ -26,6 +26,7 @@ set(PBRLAB_SOURCES
     shader/hair-shader.cc
     shader/shader.cc
     texture.cc
+    miniz.c
    )
 
 add_library(${BUILD_TARGET} SHARED
