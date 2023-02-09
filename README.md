@@ -2,9 +2,7 @@
 
 ![pbr-sss](pbr-sss.png)
 
-
 https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be06-7e4e81b66743.mp4
-
 
 `pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation.
 
@@ -16,6 +14,9 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
   * with random-walk(brute force) pathtraced subsurface scattering. 
     * https://disney-animation.s3.amazonaws.com/uploads/production/publication_asset/153/asset/siggraph2016SSS.pdf https://disney-animation.s3.amazonaws.com/uploads/production/publication_asset/153/asset/siggraph2016SSS.pdf
     * Extending the Disney BRDF to a BSDF with Integrated Subsurface Scattering https://blog.selfshadow.com/publications/s2015-shading-course/
+* (Principled) Hair BSDF
+  * Our Hair BSDF is based on Cycles(pbrt-v3) and applies the fix of pbrt-v3 bug https://github.com/mmp/pbrt-v3/pull/256/files
+  * Implements an improved robe evaluation method https://jo.dreggn.org/path-tracing-in-production/2018/index.html
 * Cycles and Arnold compatible shading parameters.
 
 ## Requirements
@@ -92,8 +93,37 @@ $ pbrtlab input.obj input.hair
 
 (No xform/scene graph support at the moment)
 
+## Model a scene.
+
+Currently pbrlab supports wavefront .obj + .mtl with PBR + SSS extension
+
+http://exocortex.com/blog/extending_wavefront_mtl_to_support_pbr
+
+SSS extension is pbrlab specific.
+
+### SSS parameter in Wavefront .mtl
+
+Please see [src/material-param.h](src/material-param.h) and AutodeskStandardSurface
+
+https://autodesk.github.io/standard-surface/#closures/subsurfacescattering
+
+for details.
+
+```
+| param name        | value | description             |
++-------------------+-------+-------------------------+
+| subsurface        | float | Subsurface weight       |
+| subsurface_radius | RGB   | Subsurface radius(dmfp) |
+| subsurface_color  | RGB   | Subsurface color        |
+```
+
+`subsurface_scale` is not supported(Please premultiply it to `subsurface_radius`)
+`subsurface_anisotropy` is not supported yet.
+
+
 ## TODO
 
+* [ ] More detailed description of Shader/Material parameter.
 * [ ] Log
   * [ ] nanolog
 * [ ] Interactive GUI
@@ -117,9 +147,9 @@ $ pbrtlab input.obj input.hair
   * [ ] sheen
 * [ ] Arnold Standard Shader
 * [x] Principled Hair Bsdf
-* [ ] config file
+* [ ] Support render config file
 * [ ] Scene file
-  * [ ] json
+  * [ ] json(W.I.P)
   * [x] obj
   * [ ] gltf
   * [ ] USD
@@ -140,10 +170,11 @@ $ pbrtlab input.obj input.hair
   * [ ] HIP RT
   * [ ] Vulkan RT
 
-## FIXME
+## FIXME(Need further investigation)
 
-* [ ] Random walk SSS -> Differs from Cycles results
-* [ ] clearcoat -> Clearcoat component is too small
+* Random walk SSS
+  * [ ] Slightly darker result compared to Cycles' results
+* Clearcoat -> Clearcoat component is too small
 
 ## License
 
