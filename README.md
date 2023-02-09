@@ -36,8 +36,8 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 * [x] Linux
   * [x] x64_64
   * [ ] aarch64
-* [ ] Windows 10 64bit
-* [ ] macOS
+* [x] Windows 10 64bit
+* [x] macOS
 
 ## Install Dependencies
 
@@ -65,11 +65,43 @@ $ git submodule update --init --recursive
 
 ## Building
 
+### Visual Studio(2022)
+
+```
+> vcsetup-2022.bat
+```
+
+Then open solution file at `build` folder.
+
+VS2019 may work(please modify generator settings in `vcsetup-2022.bat`)
+
+
+### Linux
+
 ```
 $ ./scripts/bootstrap-linux.sh
-$ cd build
+$ cd cmake-build-relwithdebinfo
 $ make
 ```
+
+### macOS
+
+```
+$ ./scripts/bootstrap-macos.sh
+$ cd cmake-build-relwithdebinfo
+$ make
+```
+
+### Manual cmake invoking(e.g. vscode)
+
+Standard cmake build procedure should work. for exmaple:
+
+```
+$ mkdir build
+$ cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+```
+
+TODO: provide CMakePresets.json 
 
 ## How to run
 
@@ -115,13 +147,11 @@ https://autodesk.github.io/standard-surface/#closures/subsurfacescattering
 
 for details.
 
-```
 | param name        | value | description             |
-+-------------------+-------+-------------------------+
+|:------------------|:------|:------------------------|
 | subsurface        | float | Subsurface weight       |
 | subsurface_radius | RGB   | Subsurface radius(dmfp) |
 | subsurface_color  | RGB   | Subsurface color        |
-```
 
 `subsurface_scale` is not supported(Please premultiply it to `subsurface_radius`)
 `subsurface_anisotropy` is not supported yet.
