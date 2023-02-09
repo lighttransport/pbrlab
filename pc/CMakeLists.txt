@@ -12,10 +12,10 @@ endif()
 
 set(PBRLAB_GUI_DEPS_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/deps
-  #${PROJECT_SOURCE_DIR}/deps/glad/include
+  ${PROJECT_SOURCE_DIR}/deps/glad/include
 )
 set(PBRLAB_GUI_DEPS_SOURCES
-  #${PROJECT_SOURCE_DIR}/deps/glad/src/glad.c
+  ${PROJECT_SOURCE_DIR}/deps/glad/src/glad.c
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui.cpp
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_draw.cpp
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_widgets.cpp

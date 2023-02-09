@@ -276,13 +276,12 @@ GLWindow::GLWindow(int width, int height, const char *glsl_version, const char *
   // Register Callback funtion that is called when mouse is moved
   glfwSetCursorPosCallback(window_, MotionFunc);
 
-#if 0 
+#if 1 
   if (gladLoadGL() == 0) {
     fprintf(stderr, "Failed to initialize GLAD.\n");
     glfwDestroyWindow(window_);
     exit(EXIT_FAILURE);
   }
-
   
   std::cout << "OpenGL version: " << GLVersion.major << '.' << GLVersion.minor << "\n";
 

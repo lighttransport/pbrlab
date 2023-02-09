@@ -10,6 +10,13 @@
 #pragma clang diagnostic ignored "-Weverything"
 #endif
 
+#if 1
+// deps/glad
+// OpenGL loader is still required(imgui's OpenGL3 loader does not cover enough
+// OpenGL APIs used in pbrlab)
+#include "glad/glad.h"
+#endif
+
 // embeded font data for ImGui
 #include "imgui/IconsIonicons.h"
 #include "imgui/ionicons_embed.inc.h"
@@ -19,18 +26,13 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui_impl_opengl3_loader.h"
+
 
 // deps/ImGuizmo
 #include "ImGuizmo/ImGuizmo.h"
 
-#if 0
-// glad
-#include "glad/glad.h"
-#endif
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
@@ -38,10 +40,6 @@
 #include <GL/glu.h>
 #endif
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-#endif
 #include "GLFW/glfw3.h"
 
 #ifdef __clang__
