@@ -2,6 +2,8 @@
 
 ![pbr-sss](pbr-sss.png)
 
+![pbr-sss-and-hair](pbr-sss-and-hair.png)
+
 https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be06-7e4e81b66743.mp4
 
 `pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation.
@@ -12,7 +14,8 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * PrincipledBSDF
   * with random-walk(brute force) pathtraced subsurface scattering. 
-    * https://disney-animation.s3.amazonaws.com/uploads/production/publication_asset/153/asset/siggraph2016SSS.pdf https://disney-animation.s3.amazonaws.com/uploads/production/publication_asset/153/asset/siggraph2016SSS.pdf
+    * https://disney-animation.s3.amazonaws.com/uploads/production/publication_asset/153/asset/siggraph2016SSS.pdf
+    * https://disney-animation.s3.amazonaws.com/uploads/production/publication_asset/153/asset/siggraph2016SSS.pdf
     * Extending the Disney BRDF to a BSDF with Integrated Subsurface Scattering https://blog.selfshadow.com/publications/s2015-shading-course/
 * (Principled) Hair BSDF
   * Our Hair BSDF is based on Cycles(pbrt-v3) and applies the fix of pbrt-v3 bug https://github.com/mmp/pbrt-v3/pull/256/files
