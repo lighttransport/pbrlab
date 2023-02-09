@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE: Embree is still required to build pbrlab at this moment.
+
 rm -rf cmake-build-debug
 rm -rf cmake-build-relwithdebinfo
 rm -rf cmake-build-release
@@ -9,7 +11,7 @@ CXX=clang++ CC=clang cmake \
   -DPBRLAB_USE_CCACHE=On \
   -DCMAKE_BUILD_TYPE=Debug \
   -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-  -DPBRLAB_WITH_EMBREE=On 
+  -DPBRLAB_WITH_EMBREE=On
 
 mv cmake-build-debug/compile_commands.json .
 

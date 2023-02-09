@@ -24,9 +24,12 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 ## Requirements
 
-* OpenGL 3.x
 * cmake
 * C++11 or later compiler
+* Embree
+  * embree-aarch64 is added as git submodule.
+* OpenGL 3.x
+  * For GUI. CLI build is also available.
 
 ## Supported platform
 
@@ -126,6 +129,7 @@ for details.
 
 ## TODO
 
+* [ ] NanoRT only ray tracing.
 * [ ] More detailed description of Shader/Material parameter.
 * [ ] Log
   * [ ] nanolog

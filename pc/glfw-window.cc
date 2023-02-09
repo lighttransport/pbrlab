@@ -29,6 +29,13 @@ namespace fs = ghc::filesystem;
 #pragma clang diagnostic pop
 #endif
 
+#ifdef __APPLE__
+#ifdef __clang__
+// Suppress deprecated warning of using legacy OpenGL API
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#endif
+
 static void CreateViewport(GLFWwindow *window, int w, int h) {
   int fb_w, fb_h;
   // Get actual framebuffer size.
@@ -147,8 +154,16 @@ static void MotionFunc(GLFWwindow *window, double mouse_x, double mouse_y) {
   params->prev_mouse_y = float(mouse_y);
 }
 
-static void InitializeImgui(GLFWwindow *window) {
+static void InitializeImgui(GLFWwindow *window, const char *glsl_version) {
+
+  if (glsl_version == nullptr) {
+    std::cerr << "Invalid glsl_version\n";
+    exit(-1);
+  }
+
   // Setup Dear ImGui context
+  IMGUI_CHECKVERSION();
+
   ImGui::CreateContext();
   auto &io = ImGui::GetIO();
 
@@ -159,7 +174,7 @@ static void InitializeImgui(GLFWwindow *window) {
     io.IniFilename = "../imgui.ini";
   }
 
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   float default_font_scale = 18.0f;
@@ -186,7 +201,8 @@ static void InitializeImgui(GLFWwindow *window) {
 
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(window, true);
-  ImGui_ImplOpenGL3_Init();
+  std::cout << "Init OpenGL3 with GLSL version: " << glsl_version << "\n";
+  ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
 static GLuint CreateGlShader() {
@@ -229,7 +245,7 @@ static GLuint CreateGlShader() {
   return program_id;
 }
 
-GLWindow::GLWindow(int width, int height, const char *title)
+GLWindow::GLWindow(int width, int height, const char *glsl_version, const char *title)
     : window_(glfwCreateWindow(width, height, title, nullptr, nullptr)) {
   // Create Window
   if (window_ == nullptr) {
@@ -243,6 +259,7 @@ GLWindow::GLWindow(int width, int height, const char *title)
 
   // Set Buffer Swap Timing
   glfwSwapInterval(1);
+
 
   // register gui_param pointer in this instance
   glfwSetWindowUserPointer(window_, &gui_param_);
@@ -259,21 +276,32 @@ GLWindow::GLWindow(int width, int height, const char *title)
   // Register Callback funtion that is called when mouse is moved
   glfwSetCursorPosCallback(window_, MotionFunc);
 
+#if 0 
   if (gladLoadGL() == 0) {
     fprintf(stderr, "Failed to initialize GLAD.\n");
     glfwDestroyWindow(window_);
     exit(EXIT_FAILURE);
   }
 
-  if (!GLAD_GL_VERSION_3_0) {
-    fprintf(stderr, "OpenGL 3.0 context not available.\n");
+  
+  std::cout << "OpenGL version: " << GLVersion.major << '.' << GLVersion.minor << "\n";
+
+  if (GLVersion.major < 3) {
+    fprintf(stderr, "OpenGL 3.x context not available.\n");
     glfwDestroyWindow(window_);
     exit(EXIT_FAILURE);
   }
+#endif
 
-  InitializeImgui(window_);
+  std::cout << "initialize imgui\n";
+
+  InitializeImgui(window_, glsl_version);
+
+  std::cout << "creating GL viewport\n";
 
   CreateViewport(window_, width, height);
+
+  std::cout << "Compiling GL shaders\n";
 
   // create shader program object
   shader_program_id_ = CreateGlShader();
@@ -281,6 +309,8 @@ GLWindow::GLWindow(int width, int height, const char *title)
     fprintf(stderr, "faild create shader program object\n");
     exit(EXIT_FAILURE);
   }
+
+  std::cout << "DONE GLWindow creation\n";
 }
 
 GLWindow::~GLWindow() {

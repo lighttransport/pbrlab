@@ -1,7 +1,7 @@
 #include "image-utils.h"
 
-#include <assert.h>
-#include <math.h>
+#include <cassert>
+#include <cmath>
 
 namespace pbrlab {
 

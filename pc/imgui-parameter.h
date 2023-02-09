@@ -1,7 +1,7 @@
 #ifndef PBRLAB_iMGUI_PARAMETER_H_
 #define PBRLAB_iMGUI_PARAMETER_H_
 
-#include <uchar.h>
+//#include <uchar.h>
 
 #include "material-param.h"
 

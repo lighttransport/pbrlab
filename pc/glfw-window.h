@@ -23,8 +23,10 @@
 // deps/ImGuizmo
 #include "ImGuizmo/ImGuizmo.h"
 
+#if 0
 // glad
 #include "glad/glad.h"
+#endif
 
 #ifdef __clang__
 #pragma clang diagnostic pop
@@ -58,7 +60,7 @@ private:
 
 public:
   GLWindow() = delete;
-  GLWindow(int width, int height, const char *title);
+  GLWindow(int width, int height, const char *glsl_version, const char *title);
 
   virtual ~GLWindow();
 
