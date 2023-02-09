@@ -36,7 +36,7 @@ namespace io {
 
 template <typename T>
 static T Clamp(const T x, const T a, const T b) {
-  return std::max(a, std::min(b, x));
+  return (std::max)(a, (std::min)(b, x));
 }
 
 template <typename T>
@@ -98,7 +98,7 @@ static bool LoadHdrImage(const std::string& filepath, std::vector<T>* pixels,
 }
 
 template <typename T>
-bool LoadImage(const std::string& filename, const std::string& asset_path,
+bool LoadImageFromFile(const std::string& filename, const std::string& asset_path,
                std::vector<T>* pixels, size_t* width, size_t* height,
                size_t* channels) {
   if (pixels == nullptr || width == nullptr || height == nullptr ||
@@ -158,12 +158,12 @@ bool LoadImage(const std::string& filename, const std::string& asset_path,
          pixels->size() == (*width) * (*height) * (*channels);
 }
 
-template bool LoadImage(const std::string& filename,
+template bool LoadImageFromFile(const std::string& filename,
                         const std::string& asset_path,
                         std::vector<unsigned char>* pixels, size_t* width,
                         size_t* height, size_t* channels);
 
-template bool LoadImage(const std::string& filename,
+template bool LoadImageFromFile(const std::string& filename,
                         const std::string& asset_path,
                         std::vector<float>* pixels, size_t* width,
                         size_t* height, size_t* channels);

@@ -29,7 +29,7 @@ set(PBRLAB_SOURCES
     miniz.c
    )
 
-add_library(${BUILD_TARGET} SHARED
+add_library(${BUILD_TARGET} STATIC
             ${PBRLAB_SOURCES})
 
 target_compile_features(${BUILD_TARGET}

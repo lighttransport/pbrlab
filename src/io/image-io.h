@@ -20,16 +20,16 @@ namespace io {
 /// @return true upon success to load image.
 ///
 template <typename T>
-bool LoadImage(const std::string& filename, const std::string& asset_path,
+bool LoadImageFromFile(const std::string& filename, const std::string& asset_path,
                std::vector<T>* pixels, size_t* width, size_t* height,
                size_t* channels);
 
-extern template bool LoadImage(const std::string& filename,
+extern template bool LoadImageFromFile(const std::string& filename,
                                const std::string& asset_path,
                                std::vector<unsigned char>* pixels,
                                size_t* width, size_t* height, size_t* channels);
 
-extern template bool LoadImage(const std::string& filename,
+extern template bool LoadImageFromFile(const std::string& filename,
                                const std::string& asset_path,
                                std::vector<float>* pixels, size_t* width,
                                size_t* height, size_t* channels);

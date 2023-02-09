@@ -85,7 +85,7 @@ static uint32_t LoadTexture(const std::string& filepath,
   std::vector<float> pixels;
   size_t width, height, channels;
   const bool success =
-      LoadImage(filepath, base_dir, &pixels, &width, &height, &channels);
+      LoadImageFromFile(filepath, base_dir, &pixels, &width, &height, &channels);
 
   if (!success) {
     return uint32_t(-1);

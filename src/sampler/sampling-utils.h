@@ -10,12 +10,12 @@ namespace pbrlab {
 inline float3 CosineSampleHemisphere(const float u1, const float u2) {
   const float u1_ = u1 * 2.0f * kPi, u3 = std::sqrt(u2);
   return float3(std::cos(u1_) * u3, std::sin(u1_) * u3,
-                std::sqrt(std::max(1.0f - u2, 0.0f)));
+                std::sqrt((std::max)(1.0f - u2, 0.0f)));
 }
 
 inline float3 UniformSampleSphere(const float u1, const float u2) {
   const float u     = 2.0f * u2 - 1.0f;
-  const float norm  = std::sqrt(std::max(0.0f, 1.0f - u * u));
+  const float norm  = std::sqrt((std::max)(0.0f, 1.0f - u * u));
   const float theta = 2.0f * kPi * u1;
 
   // Y up

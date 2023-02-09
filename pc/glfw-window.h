@@ -2,6 +2,10 @@
 #define PBRLAB_GLFW_WINDOW_H_
 #include <memory>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "gui-parameter.h"
 #include "pc-common.h"
 
@@ -26,13 +30,12 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
-#include "imgui/imgui_impl_opengl3_loader.h"
-
+//#include "imgui/imgui_impl_opengl3_loader.h"
 
 // deps/ImGuizmo
 #include "ImGuizmo/ImGuizmo.h"
 
-
+#include "GLFW/glfw3.h"
 
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
@@ -40,7 +43,6 @@
 #include <GL/glu.h>
 #endif
 
-#include "GLFW/glfw3.h"
 
 #ifdef __clang__
 #pragma clang diagnostic pop

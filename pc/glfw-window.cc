@@ -463,7 +463,7 @@ static void MainUI(GuiParameter *gui_param, bool *rerender) {
 
   int _max_pass = int(gui_param->pRenderItem->max_pass);
   if (ImGui::DragInt("max_pass", &_max_pass, 1.f, 1,
-                     std::numeric_limits<int>::max())) {
+                     (std::numeric_limits<int>::max)())) {
     gui_param->pRenderItem->max_pass = size_t(_max_pass);
     *rerender                        = true;
   }

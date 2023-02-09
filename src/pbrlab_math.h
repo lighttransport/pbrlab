@@ -14,7 +14,7 @@ template <typename T>
 inline T Sqr(const T& v) {
   return v * v;
 }
-inline float SafeSqrtf(float f) { return std::sqrt(std::max(f, 0.0f)); }
+inline float SafeSqrtf(float f) { return std::sqrt((std::max)(f, 0.0f)); }
 
 // TODO better way
 inline float3 vcross(const float3& a, const float3& b) {
@@ -94,7 +94,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 template <typename T>
 inline T Clamp(const T x, const T a, const T b) {
-  return std::max(a, std::min(b, x));
+  return (std::max)(a, (std::min)(b, x));
 }
 
 template <typename IN_TYPE, typename OUT_TYPE>
@@ -269,7 +269,7 @@ inline float FastAtan2(const float y, const float x) {
 
   if (b > a) r = 1.570796326794896557998982f - r;  // account for arg reduction
   if (BitCast<float, unsigned>(x) & 0x80000000u)   // test sign bit of x
-    r = float(M_PI) - r;
+    r = float(kPi) - r;
   return copysignf(r, y);
 }
 
@@ -311,8 +311,8 @@ inline float FastSinh(const float x) {
 inline float FastLog2(const float& xval) {
   // NOTE: clamp to avoid special cases and make result "safe" from large
   // negative values/nans
-  float x = Clamp(xval, std::numeric_limits<float>::min(),
-                  std::numeric_limits<float>::max());
+  float x = Clamp(xval, (std::numeric_limits<float>::min)(),
+                  (std::numeric_limits<float>::max)());
   // based on https://github.com/LiraNuna/glsl-sse2/blob/master/source/vec4.h
   unsigned bits = BitCast<float, unsigned>(x);
   int exponent  = int(bits >> 23) - 127;
