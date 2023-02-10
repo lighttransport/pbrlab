@@ -101,6 +101,8 @@ $ mkdir build
 $ cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 
+For ARM target, add `-DEMBREE_ARM=1` cmake option recommended(otherwise SSE/AVX compile flags are used)
+
 TODO: provide CMakePresets.json 
 
 ## How to run
