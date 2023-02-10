@@ -6,7 +6,7 @@
 
 https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be06-7e4e81b66743.mp4
 
-`pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation.
+`pbrlab` is well-verified(through brute force human verification and debugging) path tracing + PBR shading/rendering implementation in portable C++11.
 
 `pbrlab` is good for verifying your renderer and PBR shading.
 
@@ -26,6 +26,7 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * cmake
 * C++11 or later compiler
+  * We recommend to use clang++ since g++ is slow to compile embree-aarch64
 * Embree
   * embree-aarch64 is added as git submodule.
 * OpenGL 3.x
@@ -35,13 +36,17 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * [x] Linux
   * [x] x64_64
-  * [ ] aarch64
+  * [x] aarch64
 * [x] Windows 10 64bit
-* [x] macOS
+* [x] arm64 macOS
+  * x86 macOS may compile.
 
 ## Install Dependencies
 
 ### Ubuntu
+
+Install clang recommended.
+Install OpenGL dev package(+ X11) required if you want to build GUI.
 
 ```
 $ sudo apt install clang cmake
@@ -49,6 +54,7 @@ $ sudo apt install libgl1-mesa-dev libglu1-mesa-dev
 $ sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 
 ```
+
 #### Optional
 
 ```

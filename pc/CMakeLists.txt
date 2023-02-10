@@ -24,11 +24,14 @@ set(PBRLAB_GUI_DEPS_SOURCES
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_glfw.cpp
   ${PROJECT_SOURCE_DIR}/deps/ImGuizmo/ImGuizmo.cpp
 )
-add_library(${BUILD_TARGET}-gui-deps STATIC ${PBRLAB_GUI_DEPS_SOURCES})
-target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_DEPS_INCLUDE_DIRS})
-target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
-target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC glfw ${OPENGL_LIBRARIES})
-#target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
+
+if (PBRLAB_BUILD_GUI)
+  add_library(${BUILD_TARGET}-gui-deps STATIC ${PBRLAB_GUI_DEPS_SOURCES})
+  target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_DEPS_INCLUDE_DIRS})
+  target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
+  target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC glfw ${OPENGL_LIBRARIES})
+  #target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
+endif()
 
 
 set(EXECUTABLE_TARGETS "")
@@ -37,11 +40,13 @@ add_executable(${BUILD_TARGET}-cli ./pbrlab-cli.cc
                                    ./pc-common.cc)
 list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-cli)
 
-add_executable(${BUILD_TARGET}-gui pbrlab-gui.cc
-                                   glfw-window.cc
-                                   pc-common.cc)
-list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-gui)
-target_link_libraries(${BUILD_TARGET}-gui PRIVATE ${BUILD_TARGET}-gui-deps)
+if (PBRLAB_BUILD_GUI)
+  add_executable(${BUILD_TARGET}-gui pbrlab-gui.cc
+                                     glfw-window.cc
+                                     pc-common.cc)
+  list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-gui)
+  target_link_libraries(${BUILD_TARGET}-gui PRIVATE ${BUILD_TARGET}-gui-deps)
+endif()
 
 
 foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
