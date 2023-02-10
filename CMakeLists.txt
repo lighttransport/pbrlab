@@ -5,6 +5,7 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 
 # options
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
+option(PBRLAB_BUILD_GUI "Build GUI." ON)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
 option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
 option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
@@ -71,15 +72,17 @@ if(NOT Threads_FOUND)
   message(FATAL_ERROR "Threads not found")
 endif()
 
-# [OpenGL]
-find_package(OpenGL REQUIRED)
+if (PBRLAB_BUILD_GUI)
+  # [OpenGL]
+  find_package(OpenGL REQUIRED)
 
-# [glfw3]
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
+  # [glfw3]
+  set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+  set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+  set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+  set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
+endif()
 
 # [Embree3]
 if (PBRLAB_WITH_EMBREE)
