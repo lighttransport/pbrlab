@@ -95,6 +95,9 @@ if (PBRLAB_WITH_EMBREE)
     set(EMBREE_RAY_PACKETS Off CACHE INTERNAL "" FORCE)
     set(EMBREE_BUILD_VERIFY Off CACHE INTERNAL "" FORCE)
 
+    # Use static build
+    set(EMBREE_STATIC_LIB On CACHE INTERNAL "" FORCE)
+
     # Use pbrlab's compile flags.
     set(EMBREE_USE_PARENT_PROJECT_COMPILER_FLAGS On CACHE INTERNAL "" FORCE)
 
@@ -135,3 +138,46 @@ set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -W
 
 add_subdirectory(src)
 add_subdirectory(pc)
+
+# [VisualStudio]
+if(MSVC)
+
+  # For easier debugging in VS IDE(cmake 3.8.0 or later required) Set working
+  # directory to ${BUILD_TARGET} git repo root.
+  if(CMAKE_VERSION VERSION_GREATER 3.8.0)
+    set_target_properties(pbrlab-cli
+                             PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
+                                      "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+
+  # For easier debugging in VS IDE, set a demo scene. 
+  if(CMAKE_VERSION VERSION_GREATER 3.13.0)
+      set_target_properties(pbrlab-cli
+                            PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS
+                                       "./data/cornellbox_suzanne_lucy.obj")
+  endif()
+
+  if (PBRLAB_BUILD_GUI)
+
+    # For easier debugging in VS IDE(cmake 3.8.0 or later required) Set working
+    # directory to ${BUILD_TARGET} git repo root.
+    if(CMAKE_VERSION VERSION_GREATER 3.8.0)
+      set_target_properties(pbrlab-gui
+                              PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
+                                         "${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
+
+    # For easier debugging in VS IDE, set a demo scene. 
+    if(CMAKE_VERSION VERSION_GREATER 3.13.0)
+        set_target_properties(pbrlab-gui
+                              PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS
+                                         "./data/cornellbox_suzanne_lucy.obj")
+    endif()
+
+    # Set startup project for VS IDE
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT pbrlab-gui)
+  else()
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT pbrlab-cli)
+  endif()
+endif()
+

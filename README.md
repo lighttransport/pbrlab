@@ -77,6 +77,12 @@ $ git submodule update --init --recursive
 > vcsetup-2022.bat
 ```
 
+Or if you using bash(e.g. from Git for Windows)
+
+```
+$ cmd //c vcsetup-2022.bat
+```
+
 Then open solution file at `build` folder.
 
 VS2019 may work(please modify generator settings in `vcsetup-2022.bat`)
@@ -138,6 +144,14 @@ $ pbrtlab input.obj input.hair
 ```
 
 (No xform/scene graph support at the moment)
+
+## Known issues
+
+MSVC release build may encounter segmentation fault in Embree API due to unaligned load.
+
+https://github.com/lighttransport/embree-aarch64/issues/52
+
+Work around: Try to run pbrlab multiple times.
 
 ## Model a scene.
 
