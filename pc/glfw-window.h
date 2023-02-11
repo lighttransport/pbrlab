@@ -37,10 +37,12 @@
 
 #include "GLFW/glfw3.h"
 
+#if 0 // glu is not used anymore
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
 #else
 #include <GL/glu.h>
+#endif
 #endif
 
 

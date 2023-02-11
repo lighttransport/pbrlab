@@ -50,7 +50,7 @@ static void CreateViewport(GLFWwindow *window, int w, int h) {
   // Get actual framebuffer size.
   glfwGetFramebufferSize(window, &fb_w, &fb_h);
   glViewport(0, 0, fb_w, fb_h);
-#if 0
+#if 0 // not available(returns glError) on GL 3.2+ Core profile
   CHECK_GL("glViewport");
   glMatrixMode(GL_PROJECTION);
   CHECK_GL("glProjection");
@@ -269,10 +269,10 @@ static GLuint CreateGlShader(const char *glsl_version) {
   std::string fragmentShader = R"#(
     in vec2 vuv;
     uniform sampler2D u_texture;
-    out vec4 fc; // assume loc = 0
+    out vec4 fc;
 
     void main(void){
-        fc = vec4(vuv, 0.2, 1.0); //texture(u_texture, vuv);
+        fc = texture(u_texture, vuv);
     }
     )#";
 
@@ -482,8 +482,7 @@ void GLWindow::CreateGLVertexData() {
   CHECK_GL("BindVertexArray " << vba_id_);
 
   // vertex data
-  //const float vertex_position[] = {1.f, 1.f, -1.f, 1.f, -1.f, -1.f, 1.f, -1.f};
-  const float vertex_position[] = {0.0f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f};
+  const float vertex_position[] = {1.f, 1.f, -1.f, 1.f, -1.f, -1.f, 1.f, -1.f};
   const GLfloat vertex_uv[]     = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f, 1.f};
 
 
@@ -504,7 +503,7 @@ void GLWindow::CreateGLVertexData() {
         2,
         GL_FLOAT,
         GL_FALSE,
-        sizeof(vertex_position),
+        /* stride */sizeof(float) * 2,
         0
     );
   CHECK_GL("VertexAttribPointer pos");
@@ -523,7 +522,7 @@ void GLWindow::CreateGLVertexData() {
         2,
         GL_FLOAT,
         GL_FALSE,
-        sizeof(vertex_position),
+        /* stride */sizeof(float) * 2,
         0
     );
   CHECK_GL("VertexAttribPointer uv");
@@ -607,8 +606,7 @@ void GLWindow::DrawCurrentBuffer(void) {
 
   // Draw
   glBindTexture(GL_TEXTURE_2D, tex_id);
-  //glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-  glDrawArrays(GL_TRIANGLES, 0, 3);
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
   CHECK_GL("DrawArrays");
 
   glBindVertexArray(0);

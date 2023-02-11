@@ -77,6 +77,12 @@ $ git submodule update --init --recursive
 > vcsetup-2022.bat
 ```
 
+Or if you using bash(e.g. from Git for Windows)
+
+```
+$ cmd //c vcsetup-2022.bat
+```
+
 Then open solution file at `build` folder.
 
 VS2019 may work(please modify generator settings in `vcsetup-2022.bat`)
