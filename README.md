@@ -145,6 +145,14 @@ $ pbrtlab input.obj input.hair
 
 (No xform/scene graph support at the moment)
 
+## Known issues
+
+MSVC release build may encounter segmentation fault in Embree API due to unaligned load.
+
+https://github.com/lighttransport/embree-aarch64/issues/52
+
+Work around: Try to run pbrlab multiple times.
+
 ## Model a scene.
 
 Currently pbrlab supports wavefront .obj + .mtl with PBR + SSS extension
