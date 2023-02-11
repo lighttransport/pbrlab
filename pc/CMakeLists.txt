@@ -28,7 +28,7 @@ set(PBRLAB_GUI_DEPS_SOURCES
 if (PBRLAB_BUILD_GUI)
   add_library(${BUILD_TARGET}-gui-deps STATIC ${PBRLAB_GUI_DEPS_SOURCES})
   target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_DEPS_INCLUDE_DIRS})
-  target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
+  #target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
   target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC glfw ${OPENGL_LIBRARIES})
   #target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
 endif()
@@ -51,7 +51,7 @@ endif()
 
 foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
   add_sanitizers(${EXECUTABLE_TARGET})
-  target_compile_features(${EXECUTABLE_TARGET} PRIVATE cxx_std_11)
+  #target_compile_features(${EXECUTABLE_TARGET} PRIVATE cxx_std_11)
 
   # set output directory for executables
   set_target_properties(${EXECUTABLE_TARGET} PROPERTIES
@@ -66,6 +66,10 @@ foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
   target_link_libraries(${EXECUTABLE_TARGET} PRIVATE
     ${PROJECT_NAME}
     mpark_variant)
+
+  message(STATUS ${PBRLAB_EXT_COMPILE_DEFINITIONS_PRIVATE})
+  target_compile_definitions(${EXECUTABLE_TARGET}
+      PRIVATE ${PBRLAB_EXT_COMPILE_DEFINITIONS_PRIVATE})
 
   if (PBRLAB_USE_STACK_TRACE_LOGGER)
     target_compile_definitions(${EXECUTABLE_TARGET}

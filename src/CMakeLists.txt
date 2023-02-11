@@ -32,8 +32,8 @@ set(PBRLAB_SOURCES
 add_library(${BUILD_TARGET} STATIC
             ${PBRLAB_SOURCES})
 
-target_compile_features(${BUILD_TARGET}
-                        PRIVATE cxx_std_11)   
+#target_compile_features(${BUILD_TARGET}
+#                        PRIVATE cxx_std_11)   
 
 target_compile_options(${PROJECT_NAME} PRIVATE
                        $<$<CXX_COMPILER_ID:Clang>:${PBRLAB_CLANG_COMPILE_OPTIONS}>

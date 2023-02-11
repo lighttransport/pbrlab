@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 #endif
 
   if (argc < 2) {
-    std::cerr << "not specified obj filename" << std::endl;
+    std::cerr << "not specified input scene filename" << std::endl;
     return EXIT_FAILURE;
   }
 

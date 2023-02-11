@@ -26,6 +26,7 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * cmake
 * C++11 or later compiler
+  * C++14 required if you want to use USD scene load feature(through TinyUSDZ)
   * We recommend to use clang++ since g++ is slow to compile embree-aarch64
 * Embree
   * embree-aarch64 is added as git submodule.
@@ -195,7 +196,7 @@ for details.
   * [ ] json(W.I.P)
   * [x] obj
   * [ ] gltf
-  * [ ] USD
+  * [ ] USD(through TinyUSDZ)
 * [ ] Texture
   * [x] jpg, png
   * [x] OpenEXR
@@ -251,3 +252,4 @@ The following files are derived from these;
 * OpenShadingLanguage : BSD-3 license. 
 * OpenImageIO : BSD-3 license
 * miniz: MIT license. https://github.com/richgel999/miniz
+* TinyUSDZ: MIT/Apache 2.0 license.

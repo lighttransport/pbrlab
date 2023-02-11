@@ -7,7 +7,8 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
 option(PBRLAB_BUILD_GUI "Build GUI." ON)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
-option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
+option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT(not implemented yet))." ON)
+option(PBRLAB_WITH_TINYUSDZ "Use TinyUSDZ submodule to support reading USD scene." ON)
 option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
 
 # cmake modules
@@ -19,7 +20,11 @@ find_package(Sanitizers) # Address sanitizer (-DSANITIZE_ADDRESS=ON)
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 
-set(CMAKE_CXX_STANDARD 11)
+if (PBRLAB_WITH_TINYUSDZ)
+  set(CMAKE_CXX_STANDARD 14)
+else()
+  set(CMAKE_CXX_STANDARD 11)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -51,8 +56,8 @@ if(PBRLAB_USE_CCACHE)
   endif()
 endif()
 
-
 set(PBRLAB_EXT_INCLUDE_DIRS_PRIVATE "")
+set(PBRLAB_EXT_COMPLE_DEFINITIONS_PRIVATE "")
 set(PBRLAB_EXT_LIBRARIES_PRIVATE "")
 set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
 
@@ -127,6 +132,13 @@ list(APPEND PBRLAB_EXT_LIBRARIES_PUBLIC ghc_filesystem)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/)
 list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE staticjson)
 
+if (PBRLAB_WITH_TINYUSDZ)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/tinyusdz tinyusdz)
+  list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE tinyusdz_static)
+  list(APPEND PBRLAB_EXT_INCLUDE_DIRS_PRIVATE ${PROJECT_SOURCE_DIR}/third_paty/tinyusdz/src)
+  list(APPEND PBRLAB_EXT_COMPILE_DEFINITIONS_PRIVATE "-DPBRLAB_USE_TINYUSDZ=1 ")
+  message(STATUS "Enable USD support through TinyUSDZ")
+endif()
 
 set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)
 

@@ -124,7 +124,12 @@ int main(int argc, char** argv) {
   (void)argv;
 
   if (argc < 2) {
-    std::cerr << "Needs at least one input scene filename(.obj or .hair)\n"; 
+    std::cerr << "Needs at least one input scene filename"; 
+#if PBRLAB_USE_TINYUSDZ
+    std::cerr << "(.usda/.usdc/.usdz, .obj or .hair)\n"; 
+#else
+    std::cerr << "(.obj or .hair)\n"; 
+#endif
     return -1;
   }
 
