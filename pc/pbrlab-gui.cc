@@ -40,12 +40,14 @@ struct GuiItem {
 
 #if !defined(PBRLAB_USE_SDL)
 
-#define CHECK_GL(tag) do { \
-  GLenum err = glGetError(); \
-  if (err != GL_NO_ERROR) { \
-    std::cerr << "OpenGL err: " << __FILE__ << ":" << __LINE__ << ":" << __func__ << " code = " << err << ", tag = " << tag << "\n"; \
-  } \
-} while(0)
+#define CHECK_GL(tag)                                                          \
+  do {                                                                         \
+    GLenum err = glGetError();                                                 \
+    if (err != GL_NO_ERROR) {                                                  \
+      std::cerr << "OpenGL err: " << __FILE__ << ":" << __LINE__ << ":"        \
+                << __func__ << " code = " << err << ", tag = " << tag << "\n"; \
+    }                                                                          \
+  } while (0)
 
 static void GlfwErrorCallback(int error, const char* description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
@@ -63,8 +65,6 @@ static void InitImageBuffer(const size_t width, const size_t height,
 }
 
 #endif
-
-
 
 static void BufferUpdater(const pbrlab::RenderLayer& layer,
                           ImageBuffer* buffer) {
@@ -165,8 +165,9 @@ int main(int argc, char** argv) {
   const char* glsl_version = "#version 150";
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // macOS. core profile only
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+  glfwWindowHint(GLFW_OPENGL_PROFILE,
+                 GLFW_OPENGL_CORE_PROFILE);  // macOS. core profile only
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  // Required on Mac
 #else
   // GL 3.0 + GLSL 130
   const char* glsl_version = "#version 130";
@@ -181,7 +182,6 @@ int main(int argc, char** argv) {
   const uint32_t width   = 1024;  // TODO
   const uint32_t height  = 1024;  // TODO
   const uint32_t samples = 32;    // TODO
-
 
   std::shared_ptr<RenderItem> pRenderItem(new RenderItem());
 
@@ -241,13 +241,12 @@ int main(int argc, char** argv) {
 
   // When the window is open
   while (gl_window.ShouldClose() == GL_FALSE) {
-
     CHECK_GL("draw loop begin");
 
     glClearColor(0.2f, 0.2f, 0.25f, 0.0f);
     // Clear Buffer
     glClear(GL_COLOR_BUFFER_BIT);
-    //glClearDepth(1.0);
+    // glClearDepth(1.0);
 
     CHECK_GL("gl Clear");
 
@@ -272,6 +271,21 @@ int main(int argc, char** argv) {
 
 #else
   // TODO
+
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
+    std::cerr << "Failed to initialize SDL2\n";
+    exit(-1);
+  }
+
+#if defined(__APPLE__)
+  // For some reason, HIGHDPI does not work well on Retina Display for
+  // SDLRenderer backend. Disable it for a while.
+  SDL_WindowFlags window_flags =
+      static_cast<SDL_WindowFlags>(SDL_WINDOW_RESIZABLE);
+#else
+  SDL_WindowFlags window_flags = static_cast<SDL_WindowFlags>(
+      SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+#endif
 
 #endif
 

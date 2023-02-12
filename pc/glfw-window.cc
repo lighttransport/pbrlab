@@ -583,6 +583,7 @@ void GLWindow::DrawCurrentBuffer(void) {
       glBindTexture(GL_TEXTURE_2D, tex_id);
       CHECK_GL("Texture bind: txid = " << tex_id);
 
+      // NOTE: Linear -> sRGB conversion is already done in pbrlab-gui.cc:BufferUpdater().
       // TODO: Use glTexSubImage2D for efficient texture update.
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, int(image_buffer->width),
                    int(image_buffer->height), 0, GL_RGBA, GL_FLOAT,

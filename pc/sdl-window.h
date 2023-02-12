@@ -24,6 +24,8 @@
 #include "imgui/imgui_impl_sdl2.h"
 #include "imgui/imgui_impl_sdlrenderer.h"
 
+#include "SDL.h"
+
 // deps/ImGuizmo
 #include "ImGuizmo/ImGuizmo.h"
 
@@ -34,7 +36,10 @@
 class SDLWindow {
 private:
   // handle(pointer) of window
-  SDL_Window *const window_{nullptr};
+  SDL_Window *window_{nullptr};
+  SDL_Renderer *renderer_{nullptr};
+  SDL_Texture *texture_{nullptr};
+
   GuiParameter gui_param_;
 
   size_t current_tex_id_ = size_t(-1);
@@ -42,7 +47,7 @@ private:
 
 public:
   SDLWindow() = delete;
-  SDLWindow(int width, int height, const char *glsl_version, const char *title);
+  SDLWindow(int window_width, int window_height, const char *title);
 
   virtual ~SDLWindow();
 
@@ -58,7 +63,7 @@ public:
   void DrawImguiUI(void);
 
   // Determine if the window should be closed
-  int ShouldClose() const;
+  bool ShouldClose() const;
   // Fetch event with swapping color buffer
   void SwapBuffers();
 };
