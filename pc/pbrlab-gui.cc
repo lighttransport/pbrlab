@@ -5,7 +5,12 @@
 #include <iostream>
 #include <string>
 
+#if defined(PBRLAB_USE_SDL)
+#include "sdl-window.h"
+#else
 #include "glfw-window.h"
+#endif
+
 #include "image-utils.h"
 #include "pc-common.h"
 #include "render.h"
@@ -29,6 +34,12 @@
 #pragma clang diagnostic pop
 #endif
 
+struct GuiItem {
+  std::shared_ptr<ImageBuffer> pImageBuffer;
+};
+
+#if !defined(PBRLAB_USE_SDL)
+
 #define CHECK_GL(tag) do { \
   GLenum err = glGetError(); \
   if (err != GL_NO_ERROR) { \
@@ -40,10 +51,6 @@ static void GlfwErrorCallback(int error, const char* description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-struct GuiItem {
-  std::shared_ptr<ImageBuffer> pImageBuffer;
-};
-
 static void InitImageBuffer(const size_t width, const size_t height,
                             const size_t channel, GLWindow* gl_window,
                             GuiItem* gui_item) {
@@ -54,6 +61,10 @@ static void InitImageBuffer(const size_t width, const size_t height,
   gl_window->SetCurrentBuffer(buffer_id);
   gui_item->pImageBuffer = gl_window->FetchBuffer(buffer_id);
 }
+
+#endif
+
+
 
 static void BufferUpdater(const pbrlab::RenderLayer& layer,
                           ImageBuffer* buffer) {
@@ -131,7 +142,7 @@ int main(int argc, char** argv) {
   (void)argv;
 
   if (argc < 2) {
-    std::cerr << "Needs at least one input scene filename(.obj or .hair)\n"; 
+    std::cerr << "Needs at least one input scene filename(.obj or .hair)\n";
     return -1;
   }
 
@@ -140,23 +151,14 @@ int main(int argc, char** argv) {
   google::InstallFailureSignalHandler();
 #endif
 
+#if !defined(PBRLAB_USE_SDL)
+
   glfwSetErrorCallback(GlfwErrorCallback);
 
   if (glfwInit() == GL_FALSE) {
     std::cerr << "Failed to initialize GLFW." << std::endl;
     return -1;
   }
-
-#if 0
-// Decide GL+GLSL versions
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-  // GL ES 2.0 + GLSL 100
-  const char* glsl_version = "#version 100";
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
-#endif
-#endif
 
 #if defined(__APPLE__)
   // macOS only supports GL 3.2+
@@ -267,6 +269,11 @@ int main(int argc, char** argv) {
 
   rendering.join();
   buffer_updater.join();
+
+#else
+  // TODO
+
+#endif
 
   printf("finish app\n");
 

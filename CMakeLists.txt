@@ -6,6 +6,7 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 # options
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
 option(PBRLAB_BUILD_GUI "Build GUI." ON)
+option(PBRLAB_USE_SDL "Use SDLRenderer(2D renderer) for GUI. False = Use glfw + GL3 for GUI" ON)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
 option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
 option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
@@ -58,8 +59,11 @@ set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
 
 # find package and check third party
 # - pthread
-# - OpenGL
-# - glfw3
+# - For GL GUI
+#   - OpenGL
+#   - glfw3
+# - For SDL GUI
+#   - SDL2
 # - Embree3
 # - mpark variant
 # - ghc filesystem
@@ -72,16 +76,43 @@ if(NOT Threads_FOUND)
   message(FATAL_ERROR "Threads not found")
 endif()
 
-if (PBRLAB_BUILD_GUI)
-  # [OpenGL]
-  find_package(OpenGL REQUIRED)
+function(ADD_SDL2_LIB)
+  # Disable OpenGL
+  set(VIDEO_OPENGL
+      OFF
+      CACHE INTERNAL "" FORCE)
+  set(VIDEO_OPENGLES
+      OFF
+      CACHE INTERNAL "" FORCE)
+  set(VIDEO_WAYLAND
+      OFF
+      CACHE INTERNAL "" FORCE)
 
-  # [glfw3]
-  set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
-  set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
-  set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
-  set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
+  # Enable static lib only
+  set(SDL_SAHARED
+      OFF
+      CACHE INTERNAL "" FORCE)
+  set(SDL_STATIC
+      ON
+      CACHE INTERNAL "" FORCE)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/SDL SDL2)
+endfunction()
+
+
+if (PBRLAB_BUILD_GUI)
+  if (NOT PBRLAB_USE_SDL)
+    # [OpenGL]
+    find_package(OpenGL REQUIRED)
+
+    # [glfw3]
+    set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
+  else()
+    add_sdl2_lib()
+  endif()
 endif()
 
 # [Embree3]

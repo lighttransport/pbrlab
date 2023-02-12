@@ -12,25 +12,46 @@ endif()
 
 set(PBRLAB_GUI_DEPS_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/deps
+)
+
+set(PBRLAB_GUI_GL_DEPS_INCLUDE_DIRS
   ${PROJECT_SOURCE_DIR}/deps/glad/include
 )
+
 set(PBRLAB_GUI_DEPS_SOURCES
-  ${PROJECT_SOURCE_DIR}/deps/glad/src/glad.c
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui.cpp
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_draw.cpp
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_widgets.cpp
   ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_tables.cpp
-  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_opengl3.cpp
-  ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_glfw.cpp
   ${PROJECT_SOURCE_DIR}/deps/ImGuizmo/ImGuizmo.cpp
 )
+
+if (PBRLAB_USE_SDL)
+  list(APPEND PBRLAB_GUI_DEPS_SOURCES
+    ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_sdl2.cpp
+    ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_sdlrenderer.cpp
+  )
+else()
+  list(APPEND PBRLAB_GUI_DEPS_SOURCES
+    ${PROJECT_SOURCE_DIR}/deps/glad/src/glad.c
+    ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_opengl3.cpp
+    ${PROJECT_SOURCE_DIR}/deps/imgui/imgui_impl_glfw.cpp
+  )
+endif()
 
 if (PBRLAB_BUILD_GUI)
   add_library(${BUILD_TARGET}-gui-deps STATIC ${PBRLAB_GUI_DEPS_SOURCES})
   target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_DEPS_INCLUDE_DIRS})
-  target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
-  target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC glfw ${OPENGL_LIBRARIES})
+  #target_compile_features(${BUILD_TARGET}-gui-deps PRIVATE cxx_std_11)
   #target_compile_definitions(${BUILD_TARGET}-gui-deps PUBLIC "-DIMGUI_IMPL_OPENGL_LOADER_GLAD")
+
+  if (PBRLAB_USE_SDL)
+    target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_SDL_DEPS_INCLUDE_DIRS})
+    target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC SDL2-static)
+  else ()
+    target_include_directories(${BUILD_TARGET}-gui-deps PUBLIC ${PBRLAB_GUI_GL_DEPS_INCLUDE_DIRS})
+    target_link_libraries(${BUILD_TARGET}-gui-deps PUBLIC glfw ${OPENGL_LIBRARIES})
+  endif()
 endif()
 
 
@@ -41,17 +62,29 @@ add_executable(${BUILD_TARGET}-cli ./pbrlab-cli.cc
 list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-cli)
 
 if (PBRLAB_BUILD_GUI)
+  
+  if (PBRLAB_USE_SDL)
+    set(PBRLAB_GUI_WINDOW_SOURCE sdl-window.cc)
+  else()
+    set(PBRLAB_GUI_WINDOW_SOURCE glfw-window.cc)
+  endif()
+
   add_executable(${BUILD_TARGET}-gui pbrlab-gui.cc
-                                     glfw-window.cc
-                                     pc-common.cc)
+                                     pc-common.cc
+                                     ${PBRLAB_GUI_WINDOW_SOURCE}
+                                     )
   list(APPEND EXECUTABLE_TARGETS ${BUILD_TARGET}-gui)
   target_link_libraries(${BUILD_TARGET}-gui PRIVATE ${BUILD_TARGET}-gui-deps)
+
+  if (PBRLAB_USE_SDL)
+    target_compile_definitions(${BUILD_TARGET}-gui PRIVATE "PBRLAB_USE_SDL")
+  endif()
 endif()
 
 
 foreach(EXECUTABLE_TARGET IN LISTS EXECUTABLE_TARGETS)
   add_sanitizers(${EXECUTABLE_TARGET})
-  target_compile_features(${EXECUTABLE_TARGET} PRIVATE cxx_std_11)
+  #target_compile_features(${EXECUTABLE_TARGET} PRIVATE cxx_std_11)
 
   # set output directory for executables
   set_target_properties(${EXECUTABLE_TARGET} PROPERTIES
