@@ -19,3 +19,6 @@
 [submodule "third_party/embree-aarch64"]
 	path = third_party/embree-aarch64
 	url = https://github.com/lighttransport/embree-aarch64.git
+[submodule "third_party/SDL"]
+	path = third_party/SDL
+	url = https://github.com/libsdl-org/SDL

@@ -129,6 +129,7 @@ for details.
 
 ## TODO
 
+* [ ] Disable OpenGL for GUI(use SDL2 + SDLRenderer instead)
 * [ ] NanoRT only ray tracing.
 * [ ] More detailed description of Shader/Material parameter.
 * [ ] Log
@@ -215,3 +216,4 @@ The following files are derived from these;
 * OpenShadingLanguage : BSD-3 license. 
 * OpenImageIO : BSD-3 license
 * miniz: MIT license. https://github.com/richgel999/miniz
+* SDL(SDL2): zlib license.
