@@ -5,6 +5,8 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 
 # options
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
+option(PBRLAB_BUILD_GUI "Build GUI." ON)
+option(PBRLAB_USE_SDL "Use SDLRenderer(2D renderer) for GUI. False = Use glfw + GL3 for GUI" ON)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
 option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
 option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
@@ -18,14 +20,9 @@ find_package(Sanitizers) # Address sanitizer (-DSANITIZE_ADDRESS=ON)
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -D_LIBCPP_DEBUG")
 
-# Check C++11 support
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
-if (COMPILER_SUPPORTS_CXX11)
-    message(STATUS "C++11 support: OK (-std=c++11)")
-else()
-    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
-endif()
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # [ccache]
 if(PBRLAB_USE_CCACHE)
@@ -62,8 +59,11 @@ set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
 
 # find package and check third party
 # - pthread
-# - OpenGL
-# - glfw3
+# - For GL GUI
+#   - OpenGL
+#   - glfw3
+# - For SDL GUI
+#   - SDL2
 # - Embree3
 # - mpark variant
 # - ghc filesystem
@@ -76,15 +76,44 @@ if(NOT Threads_FOUND)
   message(FATAL_ERROR "Threads not found")
 endif()
 
-# [OpenGL]
-find_package(OpenGL REQUIRED)
+function(ADD_SDL2_LIB)
+  # Disable OpenGL
+  set(VIDEO_OPENGL
+      OFF
+      CACHE INTERNAL "" FORCE)
+  set(VIDEO_OPENGLES
+      OFF
+      CACHE INTERNAL "" FORCE)
+  set(VIDEO_WAYLAND
+      OFF
+      CACHE INTERNAL "" FORCE)
 
-# [glfw3]
-set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
-set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
+  # Enable static lib only
+  set(SDL_SAHARED
+      OFF
+      CACHE INTERNAL "" FORCE)
+  set(SDL_STATIC
+      ON
+      CACHE INTERNAL "" FORCE)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/SDL SDL2)
+endfunction()
+
+
+if (PBRLAB_BUILD_GUI)
+  if (NOT PBRLAB_USE_SDL)
+    # [OpenGL]
+    find_package(OpenGL REQUIRED)
+
+    # [glfw3]
+    set(GLFW_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_BUILD_TESTS OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_BUILD_DOCS OFF CACHE INTERNAL "" FORCE)
+    set(GLFW_INSTALL OFF CACHE INTERNAL "" FORCE)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
+  else()
+    add_sdl2_lib()
+  endif()
+endif()
 
 # [Embree3]
 if (PBRLAB_WITH_EMBREE)
@@ -96,6 +125,12 @@ if (PBRLAB_WITH_EMBREE)
     #set(EMBREE_MAX_ISA AVX CACHE INTERNAL "" FORCE)
     set(EMBREE_RAY_PACKETS Off CACHE INTERNAL "" FORCE)
     set(EMBREE_BUILD_VERIFY Off CACHE INTERNAL "" FORCE)
+
+    # Use static build
+    set(EMBREE_STATIC_LIB On CACHE INTERNAL "" FORCE)
+
+    # Use pbrlab's compile flags.
+    set(EMBREE_USE_PARENT_PROJECT_COMPILER_FLAGS On CACHE INTERNAL "" FORCE)
 
     if (SANITIZE_ADDRESS)
       set(EMBREE_ADDRESS_SANITIZER On CACHE INTERNAL "" FORCE)
@@ -134,3 +169,46 @@ set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -W
 
 add_subdirectory(src)
 add_subdirectory(pc)
+
+# [VisualStudio]
+if(MSVC)
+
+  # For easier debugging in VS IDE(cmake 3.8.0 or later required) Set working
+  # directory to ${BUILD_TARGET} git repo root.
+  if(CMAKE_VERSION VERSION_GREATER 3.8.0)
+    set_target_properties(pbrlab-cli
+                             PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
+                                      "${CMAKE_CURRENT_SOURCE_DIR}")
+  endif()
+
+  # For easier debugging in VS IDE, set a demo scene. 
+  if(CMAKE_VERSION VERSION_GREATER 3.13.0)
+      set_target_properties(pbrlab-cli
+                            PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS
+                                       "./data/cornellbox_suzanne_lucy.obj")
+  endif()
+
+  if (PBRLAB_BUILD_GUI)
+
+    # For easier debugging in VS IDE(cmake 3.8.0 or later required) Set working
+    # directory to ${BUILD_TARGET} git repo root.
+    if(CMAKE_VERSION VERSION_GREATER 3.8.0)
+      set_target_properties(pbrlab-gui
+                              PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
+                                         "${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
+
+    # For easier debugging in VS IDE, set a demo scene. 
+    if(CMAKE_VERSION VERSION_GREATER 3.13.0)
+        set_target_properties(pbrlab-gui
+                              PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS
+                                         "./data/cornellbox_suzanne_lucy.obj")
+    endif()
+
+    # Set startup project for VS IDE
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT pbrlab-gui)
+  else()
+    set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT pbrlab-cli)
+  endif()
+endif()
+

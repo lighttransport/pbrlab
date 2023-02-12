@@ -6,7 +6,7 @@ if (NOT RAPIDJSON_INCLUDE_DIR)
 endif()
 
 set(STATICJSON_SOURCE_FILES StaticJSON/src/staticjson.cpp)
-add_library(staticjson SHARED ${STATICJSON_SOURCE_FILES})
+add_library(staticjson STATIC ${STATICJSON_SOURCE_FILES})
 
 target_include_directories(staticjson PUBLIC SYSTEM ${RAPIDJSON_INCLUDE_DIR})
 target_include_directories(staticjson PUBLIC StaticJSON/include)

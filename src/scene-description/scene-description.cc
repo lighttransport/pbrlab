@@ -251,7 +251,7 @@ static bool LoadTexture(const std::string& filepath,
   std::vector<float> pixels;
   size_t width, height, channels;
   const bool success =
-      io::LoadImage(filepath, base_dir, &pixels, &width, &height, &channels);
+      io::LoadImageFromFile(filepath, base_dir, &pixels, &width, &height, &channels);
 
   if (!success) {
     return false;
