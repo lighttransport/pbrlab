@@ -26,7 +26,8 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * cmake
 * C++11 or later compiler
-  * We recommend to use clang++ since g++ is slow to compile embree-aarch64
+  * We recommend to use clang since gcc is slow to compile embree-aarch64
+  * Also, there is an issue when using gcc on Linux: https://github.com/lighttransport/pbrlab/issues/2
 * Embree
   * embree-aarch64 is added as git submodule.
 * OpenGL 3.x
@@ -116,6 +117,27 @@ $ cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 For ARM target, add `-DEMBREE_ARM=1` cmake option recommended(otherwise SSE/AVX compile flags are used)
 
 TODO: provide CMakePresets.json 
+
+
+## Built with external Embree(e.g. prebuilt Embree package).
+
+TBB is required to build.
+(you can install tbb through `sudo apt install libtbb-dev` on Ubuntu)
+
+
+Please set the following cmake option.
+(See an example bootstrap script in [scripts/bootstrap-linux-aarch64.sh](scripts/bootstrap-linux-external-embree.sh) )
+
+```
+-DPBRLAB_USE_EXTERNAL_EMBREE=On \
+-Dembree_DIR=external/embree-3.13.5.x86_64.linux/lib/cmake/embree-3.13.5
+```
+
+`embree_DIR` points to a folder containing `embree-config.cmake`
+
+Optionally, set path to `TBB` package if required.
+
+
 
 ## How to run
 
