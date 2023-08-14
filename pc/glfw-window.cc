@@ -251,7 +251,8 @@ static GLuint CreateGlShader(const char *glsl_version) {
     glGetShaderiv(v_shader_id, GL_INFO_LOG_LENGTH, &maxLength);
 
     // The maxLength includes the NULL character
-    std::vector<GLchar> errorLog(maxLength);
+    std::vector<GLchar> errorLog;
+    errorLog.resize(size_t(maxLength));
     glGetShaderInfoLog(v_shader_id, maxLength, &maxLength, &errorLog[0]);
 
     // Provide the infolog in whatever manor you deem best.
@@ -288,7 +289,8 @@ static GLuint CreateGlShader(const char *glsl_version) {
     glGetShaderiv(f_shader_id, GL_INFO_LOG_LENGTH, &maxLength);
 
     // The maxLength includes the NULL character
-    std::vector<GLchar> errorLog(maxLength);
+    std::vector<GLchar> errorLog;
+    errorLog.resize(size_t(maxLength));
     glGetShaderInfoLog(f_shader_id, maxLength, &maxLength, &errorLog[0]);
 
     // Provide the infolog in whatever manor you deem best.
@@ -314,7 +316,7 @@ static GLuint CreateGlShader(const char *glsl_version) {
   CHECK_GL("Link program");
 
   GLint isLinked;
-  glGetProgramiv(program_id, GL_LINK_STATUS, (int *)&isLinked);
+  glGetProgramiv(program_id, GL_LINK_STATUS, &isLinked);
   if (isLinked != GL_TRUE) {
     std::cerr << "Failed to link program\n";
 
@@ -322,7 +324,8 @@ static GLuint CreateGlShader(const char *glsl_version) {
     glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &maxLength);
 
     // The maxLength includes the NULL character
-    std::vector<GLchar> errorLog(maxLength);
+    std::vector<GLchar> errorLog;
+    errorLog.resize(size_t(maxLength));
     glGetProgramInfoLog(program_id, maxLength, &maxLength, &errorLog[0]);
 
     glDeleteProgram(program_id);
@@ -499,12 +502,12 @@ void GLWindow::CreateGLVertexData() {
   CHECK_GL("EnableVertexAttrib pos");
 
   glVertexAttribPointer(
-        position_location,
+        GLuint(position_location),
         2,
         GL_FLOAT,
         GL_FALSE,
         /* stride */sizeof(float) * 2,
-        0
+        reinterpret_cast<GLvoid *>(static_cast<uintptr_t>(0))
     );
   CHECK_GL("VertexAttribPointer pos");
 
@@ -518,12 +521,12 @@ void GLWindow::CreateGLVertexData() {
   CHECK_GL("EnableVertexAttrib uv");
 
   glVertexAttribPointer(
-        uv_location,
+        GLuint(uv_location),
         2,
         GL_FLOAT,
         GL_FALSE,
         /* stride */sizeof(float) * 2,
-        0
+        reinterpret_cast<GLvoid *>(static_cast<uintptr_t>(0))
     );
   CHECK_GL("VertexAttribPointer uv");
 
