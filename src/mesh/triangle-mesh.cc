@@ -157,7 +157,9 @@ float2 TriangleMesh::FetchTexcoord(const uint32_t prim_id, const float u,
 
 uint32_t TriangleMesh::GetNumFaces(void) const { return num_faces_; }
 uint32_t TriangleMesh::GetNumVertices(void) const {
-  return uint32_t(pAttribute_->vertices.size() / 3);
+  assert(pAttribute_);
+  assert((pAttribute_->vertices.size() % 4) == 0);
+  return uint32_t(pAttribute_->vertices.size() / 4); // xyzw
 }
 
 const std::vector<uint32_t>& TriangleMesh::GetVertexIds(void) const {
