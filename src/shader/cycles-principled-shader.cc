@@ -442,7 +442,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   float3 omega_out;
   Matrix::MultV(global_omega_out.v, Rgl, omega_out.v);
 
-  assert(std::abs(omega_out[2] - vdot(global_omega_out, ez)) < kEps);
+  assert(std::fabs(omega_out[2] - vdot(global_omega_out, ez)) < kEps);
 
   const CyclesPrincipledBsdf bsdf = ParamToBsdf(scene, *surface_info);
 
@@ -469,7 +469,7 @@ void CyclesPrincipledShader(const Scene& scene, const float3& global_omega_out,
   ShadingLocalToGlobal(ex, ey, ez, Rlg);  // local to global
   Matrix::MultV(omega_in.v, Rlg, global_omega_in->v);
 
-  assert(std::abs(vdot(*global_omega_in, ez) - omega_in[2]) < kEps);
+  assert(std::fabs(vdot(*global_omega_in, ez) - omega_in[2]) < kEps);
 
   const auto cos_i = abs(omega_in[2]);
   *throuput        = bsdf_f * cos_i / ret_pdf;

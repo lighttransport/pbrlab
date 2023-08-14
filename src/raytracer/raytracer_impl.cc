@@ -278,7 +278,7 @@ bool Raytracer::Impl::AnyHit1(const float* ray_org, const float* ray_dir,
   IntersectContext context;
   const float tmp = rayhit.ray.tfar;
   rtcOccluded1(embree_global_scene_, &(context).context, &(rayhit.ray));
-  return (abs(tmp - rayhit.ray.tfar) > 1e-6f);
+  return (std::fabs(tmp - rayhit.ray.tfar) > 1e-6f);
 }
 
 }  // namespace raytracer

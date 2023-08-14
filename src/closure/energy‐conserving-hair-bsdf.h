@@ -90,7 +90,7 @@ inline float Horner(const float x, const float a[], const int n) {
 }
 
 inline float SafeLogI0(float x) {
-  x = std::abs(x);
+  x = std::fabs(x);
 
 #if 0
   float A=0;
@@ -135,7 +135,7 @@ inline float SafeLogI0(float x) {
     B = std::log(I0(x));
   }
 
-  std::cerr << x << " " << A << " " << B << " " << std::abs(A - B) / std::abs(B) << std::endl;
+  std::cerr << x << " " << A << " " << B << " " << std::fabs(A - B) / std::fabs(B) << std::endl;
 #endif
 
 #if USE_IMPROVED_ROBE_EVALUATION
@@ -209,7 +209,7 @@ inline float FrDielectric(float cos_theta_i, float eta_i, float eta_t) {
     const float a = eta_i;
     eta_i         = eta_t;
     eta_t         = a;
-    cos_theta_i   = std::abs(cos_theta_i);
+    cos_theta_i   = std::fabs(cos_theta_i);
   }
 
   // Compute _cosThetaT_ using Snell's law
@@ -255,7 +255,7 @@ inline std::array<float3, 4> Ap(const float cos_theta_o, const float eta,
 }
 
 inline float Logistic(float x, const float s) {
-  x = std::abs(x);
+  x = std::fabs(x);
 
   const float numerator = MY_EXP(-x / s);
   return numerator / (s * Sqr(1.0f + numerator));

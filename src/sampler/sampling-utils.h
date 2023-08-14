@@ -50,7 +50,7 @@ inline float PowerHeuristicWeight(const float sampled_pdf,
     invmis = 1 - 1 / (1 + r * r);
   }
 
-  assert(std::abs(mis + invmis - 1.0f) < 0.001f);
+  assert(std::fabs(mis + invmis - 1.0f) < 0.001f);
 #endif
 
   return mis;

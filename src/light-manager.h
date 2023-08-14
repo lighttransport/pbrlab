@@ -18,7 +18,7 @@ public:
   struct SampledLight {
     LightType light_type;
     float3 v1, v2, emission;
-    float pdf;
+    float pdf{0.0f};
   };
 
   LightManager();
