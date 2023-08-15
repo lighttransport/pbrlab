@@ -26,8 +26,7 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * cmake
 * C++11 or later compiler
-  * We recommend to use clang since gcc is slow to compile embree-aarch64
-  * Also, there is an issue when using gcc on Linux: https://github.com/lighttransport/pbrlab/issues/2
+  * We recommend to use clang++ since g++ is slow to compile embree-aarch64
 * Embree
   * embree-aarch64 is added as git submodule.
 * OpenGL 3.x
