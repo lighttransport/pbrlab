@@ -49,7 +49,7 @@ float3 GetRadiance(const Ray& input_ray, const Scene& scene, const RNG& rng) {
             trace_result.prim_id, &emission, &pdf_area);
         if (has_emission) {
           const float area_to_solid_angle =
-              abs((trace_result.t * trace_result.t) /
+              std::fabs((trace_result.t * trace_result.t) /
                   vdot(surface_info.normal_s, ray.ray_dir));
 
           const float weight =

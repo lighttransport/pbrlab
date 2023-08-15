@@ -36,16 +36,32 @@ namespace fs = ghc::filesystem;
 #endif
 #endif
 
+#define CHECK_GL(tag) do { \
+  GLenum err = glGetError(); \
+  if (err != GL_NO_ERROR) { \
+    std::cerr << "OpenGL err: " << __FILE__ << ":" << __LINE__ << ":" << __func__ << " code = " << err << ", tag = " << tag << "\n"; \
+  } \
+} while(0)
+
+
 static void CreateViewport(GLFWwindow *window, int w, int h) {
+  CHECK_GL("CreateViewport begin");
   int fb_w, fb_h;
   // Get actual framebuffer size.
   glfwGetFramebufferSize(window, &fb_w, &fb_h);
   glViewport(0, 0, fb_w, fb_h);
+#if 0 // not available(returns glError) on GL 3.2+ Core profile
+  CHECK_GL("glViewport");
   glMatrixMode(GL_PROJECTION);
+  CHECK_GL("glProjection");
   glLoadIdentity();
-  gluPerspective(45.0, double(w) / double(h), 0.01, 100.0);
+  gluPerspective(45.0, double(w) / double(h), 0.01, 1000.0);
+  CHECK_GL("gluPerspective");
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
+#endif
+
+  CHECK_GL("CreateViewport");
 
   auto *param =
       reinterpret_cast<GuiParameter *>(glfwGetWindowUserPointer(window));
@@ -203,44 +219,122 @@ static void InitializeImgui(GLFWwindow *window, const char *glsl_version) {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   std::cout << "Init OpenGL3 with GLSL version: " << glsl_version << "\n";
   ImGui_ImplOpenGL3_Init(glsl_version);
+
+  CHECK_GL("ImplOpenGL3Init");
 }
 
-static GLuint CreateGlShader() {
+static GLuint CreateGlShader(const char *glsl_version) {
+  // Assume GL 3.0+
   // Compile vertex shader
   GLuint v_shader_id       = glCreateShader(GL_VERTEX_SHADER);
   std::string vertexShader = R"#(
-    attribute vec3 position;
-    attribute vec2 uv;
-    varying vec2 vuv;
+    in vec2 position;
+    in vec2 uv;
+    out vec2 vuv;
     void main(void){
-        gl_Position = vec4(position, 1.0);
+        gl_Position = vec4(position, 0.0, 1.0);
         vuv = uv;
     }
     )#";
+
+  // append version pragma
+  vertexShader = std::string(glsl_version) + "\n" + vertexShader;
   const char *vs           = vertexShader.c_str();
   glShaderSource(v_shader_id, 1, &vs, nullptr);
   glCompileShader(v_shader_id);
 
+  GLint isCompiled = 0;
+  glGetShaderiv(v_shader_id, GL_COMPILE_STATUS, &isCompiled);
+  if(isCompiled == GL_FALSE) {
+
+    GLint maxLength = 0;
+    glGetShaderiv(v_shader_id, GL_INFO_LOG_LENGTH, &maxLength);
+
+    // The maxLength includes the NULL character
+    std::vector<GLchar> errorLog;
+    errorLog.resize(size_t(maxLength));
+    glGetShaderInfoLog(v_shader_id, maxLength, &maxLength, &errorLog[0]);
+
+    // Provide the infolog in whatever manor you deem best.
+    // Exit with failure.
+    glDeleteShader(v_shader_id); // Don't leak the shader.
+
+    std::cerr << "Compile vertex shader failed: " << std::string(errorLog.data(), errorLog.size()) << "\n";
+    exit(-1);
+  }
+
+  CHECK_GL("Compile vertx shader");
+
   // Compile fragment shader
   GLuint f_shader_id         = glCreateShader(GL_FRAGMENT_SHADER);
   std::string fragmentShader = R"#(
-    varying vec2 vuv;
-    uniform sampler2D texture;
+    in vec2 vuv;
+    uniform sampler2D u_texture;
+    out vec4 fc;
+
     void main(void){
-        gl_FragColor = texture2D(texture, vuv);
+        fc = texture(u_texture, vuv);
     }
     )#";
+
+  fragmentShader = std::string(glsl_version) + "\n" + fragmentShader;
   const char *fs             = fragmentShader.c_str();
   glShaderSource(f_shader_id, 1, &fs, nullptr);
   glCompileShader(f_shader_id);
 
+  glGetShaderiv(f_shader_id, GL_COMPILE_STATUS, &isCompiled);
+  if(isCompiled == GL_FALSE) {
+
+    GLint maxLength = 0;
+    glGetShaderiv(f_shader_id, GL_INFO_LOG_LENGTH, &maxLength);
+
+    // The maxLength includes the NULL character
+    std::vector<GLchar> errorLog;
+    errorLog.resize(size_t(maxLength));
+    glGetShaderInfoLog(f_shader_id, maxLength, &maxLength, &errorLog[0]);
+
+    // Provide the infolog in whatever manor you deem best.
+    // Exit with failure.
+    glDeleteShader(f_shader_id); // Don't leak the shader.
+
+    std::cerr << "Compile fragment shader failed: " << std::string(errorLog.data(), errorLog.size()) << "\n";
+    exit(-1);
+  }
+
+  CHECK_GL("Compile fragment shader");
+
   // Create program object
   GLuint program_id = glCreateProgram();
+  std::cout << "prog_id " << program_id << "\n";
   glAttachShader(program_id, v_shader_id);
   glAttachShader(program_id, f_shader_id);
 
+  glBindFragDataLocation(program_id, 0, "fc");
+
   // link
   glLinkProgram(program_id);
+  CHECK_GL("Link program");
+
+  GLint isLinked;
+  glGetProgramiv(program_id, GL_LINK_STATUS, &isLinked);
+  if (isLinked != GL_TRUE) {
+    std::cerr << "Failed to link program\n";
+
+    GLint maxLength = 0;
+    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &maxLength);
+
+    // The maxLength includes the NULL character
+    std::vector<GLchar> errorLog;
+    errorLog.resize(size_t(maxLength));
+    glGetProgramInfoLog(program_id, maxLength, &maxLength, &errorLog[0]);
+
+    glDeleteProgram(program_id);
+
+    std::cerr << "Link shaders failed: " << std::string(errorLog.data(), errorLog.size()) << "\n";
+    exit(-1);
+    
+  }
+
 
   return program_id;
 }
@@ -253,13 +347,6 @@ GLWindow::GLWindow(int width, int height, const char *glsl_version, const char *
     exit(EXIT_FAILURE);
   }
   fprintf(stderr, "success openning GLFW.\n");
-
-  // make this window target
-  glfwMakeContextCurrent(window_);
-
-  // Set Buffer Swap Timing
-  glfwSwapInterval(1);
-
 
   // register gui_param pointer in this instance
   glfwSetWindowUserPointer(window_, &gui_param_);
@@ -276,9 +363,13 @@ GLWindow::GLWindow(int width, int height, const char *glsl_version, const char *
   // Register Callback funtion that is called when mouse is moved
   glfwSetCursorPosCallback(window_, MotionFunc);
 
+  // make this window target
+  glfwMakeContextCurrent(window_);
+
 #if 1 
-  if (gladLoadGL() == 0) {
-    fprintf(stderr, "Failed to initialize GLAD.\n");
+  if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+  {
+    std::cerr << "Failed to initialize glad\n";
     glfwDestroyWindow(window_);
     exit(EXIT_FAILURE);
   }
@@ -290,24 +381,33 @@ GLWindow::GLWindow(int width, int height, const char *glsl_version, const char *
     glfwDestroyWindow(window_);
     exit(EXIT_FAILURE);
   }
+
+  std::cout << "initialize gl\n";
 #endif
 
-  std::cout << "initialize imgui\n";
+  // Set Buffer Swap Timing
+  glfwSwapInterval(1);
 
   InitializeImgui(window_, glsl_version);
-
-  std::cout << "creating GL viewport\n";
-
-  CreateViewport(window_, width, height);
 
   std::cout << "Compiling GL shaders\n";
 
   // create shader program object
-  shader_program_id_ = CreateGlShader();
+  shader_program_id_ = CreateGlShader(glsl_version);
   if (shader_program_id_ == 0) {
     fprintf(stderr, "faild create shader program object\n");
     exit(EXIT_FAILURE);
   }
+
+  // setup VBA
+  std::cout << "creating GL vertex data\n";
+  glGenVertexArrays(1, &vba_id_);
+  CHECK_GL("GenVertexArrays");
+  CreateGLVertexData();
+
+  std::cout << "creating GL viewport\n";
+
+  CreateViewport(window_, width, height);
 
   std::cout << "DONE GLWindow creation\n";
 }
@@ -332,6 +432,7 @@ GLWindow::~GLWindow() {
 static GLuint CreateGlTexture(void) {
   GLuint ret;
   glGenTextures(1, &ret);
+  CHECK_GL("glGenTextures");
   return ret;
 }
 
@@ -368,6 +469,71 @@ size_t GLWindow::CreateBuffer(const size_t width, const size_t height,
   return buffer_id;
 }
 
+void GLWindow::CreateGLVertexData() {
+
+  glUseProgram(shader_program_id_);
+  CHECK_GL("glUseProgram " << shader_program_id_);
+
+  // Fetch attributes location
+  const GLint position_location =
+      glGetAttribLocation(shader_program_id_, "position");
+  CHECK_GL("failed to get position attr loc.");
+  const GLint uv_location = glGetAttribLocation(shader_program_id_, "uv");
+  CHECK_GL("failed to get uv attr loc.");
+
+  glBindVertexArray(vba_id_);
+  CHECK_GL("BindVertexArray " << vba_id_);
+
+  // vertex data
+  const float vertex_position[] = {1.f, 1.f, -1.f, 1.f, -1.f, -1.f, 1.f, -1.f};
+  const GLfloat vertex_uv[]     = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f, 1.f};
+
+
+  glGenBuffers(1, &pos_buffer_id_); 
+  glGenBuffers(1, &uv_buffer_id_); 
+  CHECK_GL("GenBuffers");
+
+  glBindBuffer(GL_ARRAY_BUFFER, pos_buffer_id_);
+  CHECK_GL("BindBuffer pos");
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position), vertex_position, GL_STATIC_DRAW);
+  CHECK_GL("BufferData pos");
+
+  glEnableVertexAttribArray(GLuint(position_location));
+  CHECK_GL("EnableVertexAttrib pos");
+
+  glVertexAttribPointer(
+        GLuint(position_location),
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        /* stride */sizeof(float) * 2,
+        reinterpret_cast<GLvoid *>(static_cast<uintptr_t>(0))
+    );
+  CHECK_GL("VertexAttribPointer pos");
+
+  glBindBuffer(GL_ARRAY_BUFFER, uv_buffer_id_);
+  CHECK_GL("BindBuffer uv");
+
+  glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_uv), vertex_uv, GL_STATIC_DRAW);
+  CHECK_GL("BufferData uv");
+  
+  glEnableVertexAttribArray(GLuint(uv_location));
+  CHECK_GL("EnableVertexAttrib uv");
+
+  glVertexAttribPointer(
+        GLuint(uv_location),
+        2,
+        GL_FLOAT,
+        GL_FALSE,
+        /* stride */sizeof(float) * 2,
+        reinterpret_cast<GLvoid *>(static_cast<uintptr_t>(0))
+    );
+  CHECK_GL("VertexAttribPointer uv");
+
+  glBindVertexArray(0);
+
+}
+
 bool GLWindow::SetCurrentBuffer(const size_t buffer_id) {
   if (buffer_id < gui_param_.pImageBuffers.size()) {
     gui_param_.current_buffer_id = buffer_id;
@@ -385,6 +551,8 @@ std::shared_ptr<ImageBuffer> GLWindow::FetchBuffer(const size_t buffer_id) {
 }
 
 void GLWindow::DrawCurrentBuffer(void) {
+  CHECK_GL("DrawCurrentBuffer begin");
+
   if (gui_param_.current_buffer_id >= gui_param_.pImageBuffers.size()) {
     return;
   }
@@ -396,43 +564,42 @@ void GLWindow::DrawCurrentBuffer(void) {
   const GLuint tex_id = texture_ids_[current_tex_id_];
 
   glUseProgram(shader_program_id_);
-  // vertex data
-  const float vertex_position[] = {1.f, 1.f, -1.f, 1.f, -1.f, -1.f, 1.f, -1.f};
-  const GLfloat vertex_uv[]     = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 1.f, 1.f};
+  CHECK_GL("glUseProgram " << shader_program_id_);
 
-  // Fetch attributes location
-  const GLint position_location =
-      glGetAttribLocation(shader_program_id_, "position");
-  const GLint uv_location = glGetAttribLocation(shader_program_id_, "uv");
   const GLint texture_location =
-      glGetUniformLocation(shader_program_id_, "texture");
+      glGetUniformLocation(shader_program_id_, "u_texture");
+  CHECK_GL("failed to get u_texture uniform loc.");
 
-  // Enable attributes
-  glEnableVertexAttribArray(GLuint(position_location));
-  glEnableVertexAttribArray(GLuint(uv_location));
+  glBindVertexArray(vba_id_);
+  CHECK_GL("BindVertexArray " << vba_id_);
+
 
   // uniform attribute
   glUniform1i(texture_location, 0);
-  // register attribute
-  glVertexAttribPointer(GLuint(position_location), 2, GL_FLOAT, false, 0,
-                        vertex_position);
-  glVertexAttribPointer(GLuint(uv_location), 2, GL_FLOAT, false, 0, vertex_uv);
 
-  // Set Buffer
+  // Update texture if required
   {
     std::lock_guard<std::mutex> lock(image_buffer->mtx);
     if (image_buffer->has_update) {
       // Transfer buffer to GPU
       glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
       glBindTexture(GL_TEXTURE_2D, tex_id);
+      CHECK_GL("Texture bind: txid = " << tex_id);
+
+      // TODO: Use glTexSubImage2D for efficient texture update.
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, int(image_buffer->width),
                    int(image_buffer->height), 0, GL_RGBA, GL_FLOAT,
                    image_buffer->buffer.data());
+
+      CHECK_GL("Texture transfer");
+
       // SetTexture
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+      CHECK_GL("Texture param set");
 
       // unbind TODO need?
       glBindTexture(GL_TEXTURE_2D, 0);
@@ -443,6 +610,12 @@ void GLWindow::DrawCurrentBuffer(void) {
   // Draw
   glBindTexture(GL_TEXTURE_2D, tex_id);
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+  CHECK_GL("DrawArrays");
+
+  glBindVertexArray(0);
+  CHECK_GL("BindVertexArray(0)");
+
+  glFlush();
 }
 
 static void RequestRerender(GuiParameter *gui_param) {

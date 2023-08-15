@@ -1,6 +1,7 @@
 #include "raytracer/raytracer_impl.h"
 
 #include <cmath>
+#include <cassert>
 
 #include <memory>
 #include <vector>
@@ -101,19 +102,33 @@ uint32_t Raytracer::Impl::AddTriangleMeshToLocalScene(
   triangle_mesh.num_vertices  = num_vertices;
   triangle_mesh.num_faces     = num_faces;
 
-  // Set vertices
-  triangle_mesh.vertices = vertices;
+  // FIXME(LTE): vertices are flattened across scene objects
+  // So create single shared buffer for Vertex, or create vertex buffer per scene object.
 
-  // alignement with 4 float
-  // TODO alignment is enough?
+  // vertices = 4 floats(xyzw)
+ #if 0
+  float *embree_vertices = reinterpret_cast<float *>(rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3, /* stride */sizeof(float) * 4, num_vertices));
+  assert(embree_vertices);
+  memcpy(embree_vertices, vertices, sizeof(float) * 4 * num_vertices);
+  triangle_mesh.vertices = embree_vertices;
+
+  uint32_t *embree_faces = reinterpret_cast<uint32_t *>(rtcSetNewGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3, /* stride */sizeof(uint32_t) * 3, num_faces));
+  assert(embree_faces);
+  memcpy(embree_faces, faces, sizeof(uint32_t) * 3 * num_faces);
+  triangle_mesh.faces = embree_faces;
+#else
+
+  triangle_mesh.vertices = vertices;
   rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_VERTEX, 0, RTC_FORMAT_FLOAT3,
                              triangle_mesh.vertices, 0, sizeof(float) * 4,
                              num_vertices);
+
 
   triangle_mesh.faces = faces;
   rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT3,
                              triangle_mesh.faces, 0, sizeof(uint32_t) * 3,
                              num_faces);
+#endif
 
   rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
   rtcCommitGeometry(geom);
@@ -263,7 +278,7 @@ bool Raytracer::Impl::AnyHit1(const float* ray_org, const float* ray_dir,
   IntersectContext context;
   const float tmp = rayhit.ray.tfar;
   rtcOccluded1(embree_global_scene_, &(context).context, &(rayhit.ray));
-  return (abs(tmp - rayhit.ray.tfar) > 1e-6f);
+  return (std::fabs(tmp - rayhit.ray.tfar) > 1e-6f);
 }
 
 }  // namespace raytracer

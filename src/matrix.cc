@@ -18,15 +18,15 @@ static inline void vcross(const float a[3], const float b[3], float c[3]) {
 
 static inline float vlength(float v[3]) {
   float len2 = vdot(v, v);
-  if (std::abs(len2) > 1.0e-30f) {
-    return sqrt(len2);
+  if (std::fabs(len2) > 1.0e-6f) {
+    return std::sqrt(len2);
   }
   return 0.0f;
 }
 
 static void vnormalize(float v[3]) {
   float len = vlength(v);
-  if (std::abs(len) > 1.0e-30f) {
+  if (std::fabs(len) > 1.0e-6f) {
     float inv_len = 1.0f / len;
     v[0] *= inv_len;
     v[1] *= inv_len;

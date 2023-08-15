@@ -175,7 +175,7 @@ void HairShader(const Scene& scene, const float3& global_omega_out,
   float3 omega_out;
   Matrix::MultV(global_omega_out.v, Rgl, omega_out.v);
 
-  assert(std::abs(omega_out[2] - vdot(global_omega_out, ez)) < kEps);
+  assert(std::fabs(omega_out[2] - vdot(global_omega_out, ez)) < kEps);
 
   const HairBsdfParameter* m_param =
       mpark::get_if<HairBsdfParameter>(surface_info->material_param);
@@ -194,7 +194,7 @@ void HairShader(const Scene& scene, const float3& global_omega_out,
               bsdf.eta, bsdf.alpha, bsdf.tints, bsdf.transparent_scale, pdf_);
 
           // Fit the ordinary BSDF coordinate system.
-          *bsdf_f_ = bsdf_f_cos_i / abs(omega_in_[0]);
+          *bsdf_f_ = bsdf_f_cos_i / std::fabs(omega_in_[0]);
         },
         false);
     (*contribute) = (*contribute) + d;
@@ -215,7 +215,7 @@ void HairShader(const Scene& scene, const float3& global_omega_out,
   ShadingLocalToGlobal(ex, ey, ez, Rlg);  // local to global
   Matrix::MultV(omega_in.v, Rlg, global_omega_in->v);
 
-  assert(std::abs(vdot(*global_omega_in, ez) - omega_in[2]) < kEps);
+  assert(std::fabs(vdot(*global_omega_in, ez) - omega_in[2]) < kEps);
 
   *throuput = bsdf_f_cos_i / ret_pdf;
   *pdf      = ret_pdf;  // pdf of bsdf sampling

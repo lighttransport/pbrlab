@@ -78,6 +78,12 @@ $ git submodule update --init --recursive
 > vcsetup-2022.bat
 ```
 
+Or if you using bash(e.g. from Git for Windows)
+
+```
+$ cmd //c vcsetup-2022.bat
+```
+
 Then open solution file at `build` folder.
 
 VS2019 may work(please modify generator settings in `vcsetup-2022.bat`)
@@ -108,7 +114,30 @@ $ mkdir build
 $ cmake -B build -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 ```
 
+For ARM target, add `-DEMBREE_ARM=1` cmake option recommended(otherwise SSE/AVX compile flags are used)
+
 TODO: provide CMakePresets.json 
+
+
+## Built with external Embree(e.g. prebuilt Embree package).
+
+TBB is required to build.
+(you can install tbb through `sudo apt install libtbb-dev` on Ubuntu)
+
+
+Please set the following cmake option.
+(See an example bootstrap script in [scripts/bootstrap-linux-aarch64.sh](scripts/bootstrap-linux-external-embree.sh) )
+
+```
+-DPBRLAB_USE_EXTERNAL_EMBREE=On \
+-Dembree_DIR=external/embree-3.13.5.x86_64.linux/lib/cmake/embree-3.13.5
+```
+
+`embree_DIR` points to a folder containing `embree-config.cmake`
+
+Optionally, set path to `TBB` package if required.
+
+
 
 ## How to run
 
@@ -137,6 +166,14 @@ $ pbrtlab input.obj input.hair
 ```
 
 (No xform/scene graph support at the moment)
+
+## Known issues
+
+MSVC release build may encounter segmentation fault in Embree API due to unaligned load.
+
+https://github.com/lighttransport/embree-aarch64/issues/52
+
+Work around: Try to run pbrlab multiple times.
 
 ## Model a scene.
 

@@ -37,10 +37,12 @@
 
 #include "GLFW/glfw3.h"
 
+#if 0 // glu is not used anymore
 #ifdef __APPLE__
 #include <OpenGL/glu.h>
 #else
 #include <GL/glu.h>
+#endif
 #endif
 
 
@@ -53,7 +55,10 @@ private:
   // handle(pointer) of window
   GLFWwindow *const window_;
   GuiParameter gui_param_;
-  GLuint shader_program_id_;
+  GLuint shader_program_id_{0};
+  GLuint vba_id_{0}; // vertex attrib array id
+  GLuint pos_buffer_id_{0};
+  GLuint uv_buffer_id_{0};
 
   size_t current_tex_id_ = size_t(-1);
   std::vector<GLuint> texture_ids_;
@@ -64,6 +69,7 @@ public:
 
   virtual ~GLWindow();
 
+  void CreateGLVertexData(void);
   size_t CreateGlTexture(void);
   bool SetCurrentGlTexture(const size_t tex_id);
   size_t CreateBuffer(const size_t width, const size_t height,

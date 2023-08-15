@@ -52,9 +52,9 @@ inline void BranchlessONB(const float3& n, float3* x, float3* y) {
 inline bool CheckONB(const float3& ex, const float3& ey, const float3& ez) {
   bool ret        = true;
   const float eps = kEps;
-  ret             = (ret && (std::abs(vlength(ex) - 1.0f) < eps));
-  ret             = (ret && (std::abs(vlength(ey) - 1.0f) < eps));
-  ret             = (ret && (std::abs(vlength(ez) - 1.0f) < eps));
+  ret             = (ret && (std::fabs(vlength(ex) - 1.0f) < eps));
+  ret             = (ret && (std::fabs(vlength(ey) - 1.0f) < eps));
+  ret             = (ret && (std::fabs(vlength(ez) - 1.0f) < eps));
 
   ret = (ret && (vlength(vcross(ex, ey) - ez)) < eps);
   ret = (ret && (vlength(vcross(ey, ez) - ex)) < eps);
@@ -119,7 +119,10 @@ inline bool ShadowRay(const Scene& scene, const float3& pos, const float3& dir,
   ray.ray_org = pos;
   ray.ray_dir = dir;
 
+  // min: slightly above the ray origin.
   ray.min_t = kEps;
+
+  // max: subtract eps to avoid intersecting light geometry(for area/geom light)
   ray.max_t = std::max(ray.min_t, dist - kEps);
 
   return scene.AnyHit1(ray);
@@ -187,7 +190,7 @@ inline float3 DirectIllumination(
 
     // To solid angle measure
     const float pdf_sigma =
-        abs(result_light_sample.pdf * dist * dist / (wl_dot_nl * wl_dot_np));
+        std::fabs(result_light_sample.pdf * dist * dist / (wl_dot_nl * wl_dot_np));
 
     if (((!hemisphere) || (wl_dot_nl > 0.0f && wl_dot_np > 0.0f)) &&
         !ShadowRay(scene, pos, dir_to_light, dist)) {
