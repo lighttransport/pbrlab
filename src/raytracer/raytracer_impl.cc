@@ -3,6 +3,8 @@
 
 #include <memory>
 #include <vector>
+#include <limits>
+#include <cstring>
 
 #include "raytracer/mesh.h"
 #include "raytracer/raytracer_impl.h"
@@ -10,7 +12,8 @@
 namespace pbrlab {
 namespace raytracer {
 
-const constexpr float kMaxRayDistance = 1.844E18f;
+//const constexpr float kMaxRayDistance = 1.844E18f;
+const constexpr float kMaxRayDistance = std::numeric_limits<float>::infinity();
 
 // Custom intersection context
 struct IntersectContext {
@@ -214,10 +217,12 @@ static void Normalize(float* v) {
   v[2] *= inv_norm;
 }
 static TraceResult EmbreeRayToTraceResult(const RTCRayHit& rayhit) {
+
   TraceResult tr;
   if (rayhit.hit.instID[0] != RTC_INVALID_GEOMETRY_ID &&
       rayhit.hit.geomID != RTC_INVALID_GEOMETRY_ID &&
       rayhit.hit.primID != RTC_INVALID_GEOMETRY_ID) {
+
     tr.normal_g[0] = rayhit.hit.Ng_x;
     tr.normal_g[1] = rayhit.hit.Ng_y;
     tr.normal_g[2] = rayhit.hit.Ng_z;
@@ -248,10 +253,11 @@ static RTCRayHit SetRayHit(const float* ray_org, const float* ray_dir,
 
   rayhit.ray.tnear = min_t;
   rayhit.ray.tfar  = std::min(max_t, kMaxRayDistance);
+  rayhit.ray.mask = 0xffffffff;
   rayhit.ray.flags = 0;
 
   rayhit.hit.geomID    = static_cast<uint32_t>(RTC_INVALID_GEOMETRY_ID);
-  rayhit.hit.primID    = static_cast<uint32_t>(RTC_INVALID_GEOMETRY_ID);
+  //rayhit.hit.primID    = static_cast<uint32_t>(RTC_INVALID_GEOMETRY_ID);
   rayhit.hit.instID[0] = static_cast<uint32_t>(RTC_INVALID_GEOMETRY_ID);
 
   return rayhit;
