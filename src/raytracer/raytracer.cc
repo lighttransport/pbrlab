@@ -1,6 +1,6 @@
 #include "raytracer/raytracer.h"
 
-#include <embree3/rtcore.h>
+#include <embree4/rtcore.h>
 
 #include "raytracer/raytracer_impl.h"
 

@@ -84,7 +84,7 @@ if (PBRLAB_BUILD_GUI)
   add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/glfw)
 endif()
 
-# [Embree3]
+# [Embree]
 if (PBRLAB_WITH_EMBREE)
   if (NOT PBRLAB_USE_EXTERNAL_EMBREE)
     set(EMBREE_TASKING_SYSTEM Internal CACHE INTERNAL "" FORCE)
@@ -99,19 +99,19 @@ if (PBRLAB_WITH_EMBREE)
     set(EMBREE_STATIC_LIB On CACHE INTERNAL "" FORCE)
 
     # Use pbrlab's compile flags.
-    set(EMBREE_USE_PARENT_PROJECT_COMPILER_FLAGS On CACHE INTERNAL "" FORCE)
+    #set(EMBREE_USE_PARENT_PROJECT_COMPILER_FLAGS On CACHE INTERNAL "" FORCE)
 
     if (SANITIZE_ADDRESS)
       set(EMBREE_ADDRESS_SANITIZER On CACHE INTERNAL "" FORCE)
-      message(STATUS "Enable ASAN for Embree3")
+      message(STATUS "Enable ASAN for Embree")
     endif ()
     
-    add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/embree-aarch64)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/embree-portable)
     list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE embree)
-    list(APPEND PBRLAB_EXT_INCLUDE_DIRS_PRIVATE ${CMAKE_SOURCE_DIR}/third_party/embree-aarch64/include)
+    list(APPEND PBRLAB_EXT_INCLUDE_DIRS_PRIVATE ${CMAKE_SOURCE_DIR}/third_party/embree-portable/include)
   else()
     message(STATUS "Searching external embree...")
-    find_package(embree 3.12 REQUIRED)
+    find_package(embree 4.0 REQUIRED)
     if (embree_FOUND)
       message("External Embree found in ${EMBREE_INCLUDE_DIRS}")
     else()

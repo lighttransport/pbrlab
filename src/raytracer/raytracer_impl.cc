@@ -1,12 +1,9 @@
-#include "raytracer/raytracer_impl.h"
-
 #include <cmath>
 #include <cassert>
 
 #include <memory>
 #include <vector>
 
-#include "embree3/rtcore.h"
 #include "raytracer/mesh.h"
 #include "raytracer/raytracer_impl.h"
 
@@ -17,9 +14,9 @@ const constexpr float kMaxRayDistance = 1.844E18f;
 
 // Custom intersection context
 struct IntersectContext {
-  RTCIntersectContext context;
+  RTCIntersectArguments args;
   // TODO
-  IntersectContext() { rtcInitIntersectContext(&context); }
+  IntersectContext() { rtcInitIntersectArguments(&args); }
 };
 
 Raytracer::Impl::Impl(void) {
@@ -130,7 +127,7 @@ uint32_t Raytracer::Impl::AddTriangleMeshToLocalScene(
                              num_faces);
 #endif
 
-  rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
+  //rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
   rtcCommitGeometry(geom);
 
   LocalScene& local_scene           = local_scenes_.at(local_scene_id);
@@ -175,7 +172,7 @@ uint32_t Raytracer::Impl::AddCubicBezierCurveMeshToLocalScene(
   rtcSetSharedGeometryBuffer(geom, RTC_BUFFER_TYPE_INDEX, 0, RTC_FORMAT_UINT,
                              indices, 0, sizeof(uint32_t), num_segments);
 
-  rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
+  //rtcSetGeometryIntersectFilterFunction(geom, IntersectionFilter);
   rtcCommitGeometry(geom);
 
   LocalScene& local_scene           = local_scenes_[local_scene_id];
@@ -266,8 +263,8 @@ TraceResult Raytracer::Impl::FirstHitTrace1(const float* ray_org,
                                             const float max_t) const {
   RTCRayHit rayhit = SetRayHit(ray_org, ray_dir, min_t, max_t);
 
-  IntersectContext context;
-  rtcIntersect1(embree_global_scene_, &(context).context, &rayhit);
+  //IntersectContext context;
+  rtcIntersect1(embree_global_scene_, &rayhit); //,&(context.args), &rayhit);
 
   return EmbreeRayToTraceResult(rayhit);
 }
@@ -275,9 +272,9 @@ TraceResult Raytracer::Impl::FirstHitTrace1(const float* ray_org,
 bool Raytracer::Impl::AnyHit1(const float* ray_org, const float* ray_dir,
                               const float min_t, const float max_t) const {
   RTCRayHit rayhit = SetRayHit(ray_org, ray_dir, min_t, max_t);
-  IntersectContext context;
+  //IntersectContext context;
   const float tmp = rayhit.ray.tfar;
-  rtcOccluded1(embree_global_scene_, &(context).context, &(rayhit.ray));
+  rtcOccluded1(embree_global_scene_, &(rayhit.ray)); //&(context).context, &(rayhit.ray));
   return (std::fabs(tmp - rayhit.ray.tfar) > 1e-6f);
 }
 
