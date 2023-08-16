@@ -4,7 +4,7 @@
 #include <tuple>
 #include <vector>
 
-#include "embree3/rtcore.h"
+#include "embree4/rtcore.h"
 #include "raytracer/mesh.h"
 #include "raytracer/raytracer.h"
 
