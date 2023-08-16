@@ -26,9 +26,9 @@ https://user-images.githubusercontent.com/18676/217257086-b7e7a708-7627-4b52-be0
 
 * cmake
 * C++11 or later compiler
-  * We recommend to use clang++ since g++ is slow to compile embree-aarch64
+  * We recommend to use clang++ since g++ is slow to compile embree-portable
 * Embree
-  * embree-aarch64 is added as git submodule.
+  * embree-portable is added as git submodule.
 * OpenGL 3.x
   * For GUI. CLI build is also available.
 
@@ -129,7 +129,7 @@ Please set the following cmake option.
 
 ```
 -DPBRLAB_USE_EXTERNAL_EMBREE=On \
--Dembree_DIR=external/embree-3.13.5.x86_64.linux/lib/cmake/embree-3.13.5
+-Dembree_DIR=external/embree-4.0.x86_64.linux/lib/cmake/embree-4.0
 ```
 
 `embree_DIR` points to a folder containing `embree-config.cmake`
@@ -166,13 +166,6 @@ $ pbrtlab input.obj input.hair
 
 (No xform/scene graph support at the moment)
 
-## Known issues
-
-MSVC release build may encounter segmentation fault in Embree API due to unaligned load.
-
-https://github.com/lighttransport/embree-aarch64/issues/52
-
-Work around: Try to run pbrlab multiple times.
 
 ## Model a scene.
 
@@ -281,7 +274,7 @@ The following files are derived from these;
 * StaticJSON : MIT license.
 * ghc filesystem : BSD-3 license.
 * mpark variant : BSD-1 license.
-* Embree-aarch64 : Apache-2.0
+* Embree : Apache-2.0
 * pcg-random : Apache-2.0
 * pbrt : BSD-2 license.
 * Cycles : Apache 2.0 license
