@@ -39,10 +39,12 @@ Raytracer::Impl::~Impl() {
   }
 }
 
+#if 0 // TODO
 static void IntersectionFilter(const RTCFilterFunctionNArguments* args) {
   if (args->context == nullptr) return;
   // TODO
 }
+#endif
 
 uint32_t Raytracer::Impl::CreateInstanceFromLocalScene(
     uint32_t local_scene_id, const float transform[4][4]) {
