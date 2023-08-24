@@ -171,7 +171,9 @@ $ pbrtlab input.obj input.hair
 
 Currently pbrlab supports wavefront .obj + .mtl with PBR + SSS extension
 
-http://exocortex.com/blog/extending_wavefront_mtl_to_support_pbr
+https://benhouston3d.com/blog/extended-wavefront-obj-mtl-for-pbr/
+
+or please take a look at tinyobjloader's note: https://github.com/tinyobjloader/tinyobjloader/blob/release/pbr-mtl.md
 
 SSS extension is pbrlab specific.
 
