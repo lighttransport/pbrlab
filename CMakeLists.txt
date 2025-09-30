@@ -5,7 +5,7 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 
 # options
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
-option(PBRLAB_BUILD_GUI "Build GUI." ON)
+option(PBRLAB_BUILD_GUI "Build GUI." OFF)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
 option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
 option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
@@ -63,7 +63,7 @@ set(PBRLAB_EXT_LIBRARIES_PUBLIC "")
 # - Embree3
 # - mpark variant
 # - ghc filesystem
-# - StaticJson
+# - StaticJson: TODO: remove
 # TODO check third_party
 
 # [Threads]
@@ -131,8 +131,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/filesystem)
 list(APPEND PBRLAB_EXT_LIBRARIES_PUBLIC ghc_filesystem)
 
 # [Static JSON]
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/)
-list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE staticjson)
+#add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/)
+#list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE staticjson)
 
 
 set(PBRLAB_CLANG_COMPILE_OPTIONS -Wall -Wextra -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded)

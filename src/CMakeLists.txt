@@ -55,3 +55,6 @@ target_link_libraries(${BUILD_TARGET} PUBLIC
 set_target_properties(${BUILD_TARGET} PROPERTIES
   OUTPUT_NAME ${BUILD_TARGET}
   LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+
+# Add MCP subdirectory
+add_subdirectory(mcp)
