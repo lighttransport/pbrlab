@@ -21,6 +21,7 @@ set(PBRLAB_SOURCES
     mesh/cubic-bezier-curve-mesh.cc
     raytracer/raytracer.cc
     raytracer/raytracer_impl.cc
+    raytracer/raytracer_tinybvh_impl.cc
     scene-description/scene-description.cc
     shader/cycles-principled-shader.cc
     shader/hair-shader.cc
@@ -35,9 +36,16 @@ add_library(${BUILD_TARGET} STATIC
 target_compile_features(${BUILD_TARGET}
                         PRIVATE cxx_std_11)   
 
-target_compile_options(${PROJECT_NAME} PRIVATE
-                       $<$<CXX_COMPILER_ID:Clang>:${PBRLAB_CLANG_COMPILE_OPTIONS}>
-                       $<$<CXX_COMPILER_ID:GCC>:-Wall -Wextra>
+# Conditionally add SSE4.1 flags when SIMD is enabled for tinybvh
+if(NOT PBRLAB_TINYBVH_NO_SIMD AND NOT PBRLAB_WITH_EMBREE)
+  set(TINYBVH_SIMD_FLAGS "-msse4.1")
+else()
+  set(TINYBVH_SIMD_FLAGS "")
+endif()
+
+target_compile_options(${BUILD_TARGET} PRIVATE
+                       $<$<CXX_COMPILER_ID:Clang>:${PBRLAB_CLANG_COMPILE_OPTIONS} ${TINYBVH_SIMD_FLAGS}>
+                       $<$<CXX_COMPILER_ID:GCC>:-Wall -Wextra ${TINYBVH_SIMD_FLAGS}>
                        $<$<CXX_COMPILER_ID:MSVC>:/W4>)  
 
 target_include_directories(${BUILD_TARGET} PUBLIC ${PROJECT_SOURCE_DIR}/src)

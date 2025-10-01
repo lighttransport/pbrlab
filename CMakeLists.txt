@@ -7,8 +7,9 @@ project(${BUILD_TARGET} LANGUAGES C CXX)
 option(PBRLAB_USE_CCACHE "Use ccache for faster recompile." ON)
 option(PBRLAB_BUILD_GUI "Build GUI." ON)
 option(PBRLAB_USE_STACK_TRACE_LOGGER "Enable automatic stack trace logger of google-glog. You must install google glog on your computer if you enable this option." OFF)
-option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use NanoRT)." ON)
+option(PBRLAB_WITH_EMBREE "Use Embree submodule for faster ray tracing(Off = use tinybvh)." OFF)
 option(PBRLAB_USE_EXTERNAL_EMBREE "Use Embree(by linking externally) for faster ray tracing(Need to set path to Embree cmake config)." OFF)
+option(PBRLAB_TINYBVH_NO_SIMD "Disable all SIMD instructions in tinybvh for maximum compatibility." OFF)
 
 # cmake modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -120,7 +121,15 @@ if (PBRLAB_WITH_EMBREE)
     list(APPEND PBRLAB_EXT_LIBRARIES_PRIVATE ${EMBREE_LIBRARY})
     list(APPEND PBRLAB_EXT_INCLUDE_DIRS_PRIVATE ${EMBREE_INCLUDE_DIRS})
   endif ()
+  # Add compile definition for Embree backend
+  add_compile_definitions(PBRLAB_WITH_EMBREE)
 endif (PBRLAB_WITH_EMBREE)
+
+# [tinybvh SIMD options]
+if (PBRLAB_TINYBVH_NO_SIMD)
+  # Add compile definition to disable all SIMD in tinybvh
+  add_compile_definitions(PBRLAB_TINYBVH_NO_SIMD)
+endif (PBRLAB_TINYBVH_NO_SIMD)
 
 # [mpark variant]
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/variant)

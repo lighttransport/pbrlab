@@ -9,25 +9,35 @@
 #include "raytracer/mesh.h"
 #include "raytracer/raytracer_impl.h"
 
+#ifndef PBRLAB_WITH_EMBREE
+#include "raytracer/raytracer_tinybvh_impl.h"
+#endif
+
 namespace pbrlab {
 namespace raytracer {
 
-//const constexpr float kMaxRayDistance = 1.844E18f;
 const constexpr float kMaxRayDistance = std::numeric_limits<float>::infinity();
 
+#ifdef PBRLAB_WITH_EMBREE
 // Custom intersection context
 struct IntersectContext {
   RTCIntersectArguments args;
   // TODO
   IntersectContext() { rtcInitIntersectArguments(&args); }
 };
+#endif
 
 Raytracer::Impl::Impl(void) {
+#ifdef PBRLAB_WITH_EMBREE
   embree_device_       = rtcNewDevice(nullptr);
   embree_global_scene_ = rtcNewScene(embree_device_);
-};
+#else
+  tinybvh_impl_.reset(new TinyBVHRaytracer());
+#endif
+}
 
 Raytracer::Impl::~Impl() {
+#ifdef PBRLAB_WITH_EMBREE
   for (auto& local_scene : local_scenes_) {
     rtcReleaseScene(local_scene.embree_scene);
   }
@@ -37,6 +47,9 @@ Raytracer::Impl::~Impl() {
   if (embree_device_ != nullptr) {
     rtcReleaseDevice(embree_device_);
   }
+#else
+  // tinybvh cleanup handled by unique_ptr
+#endif
 }
 
 #if 0 // TODO
@@ -48,6 +61,7 @@ static void IntersectionFilter(const RTCFilterFunctionNArguments* args) {
 
 uint32_t Raytracer::Impl::CreateInstanceFromLocalScene(
     uint32_t local_scene_id, const float transform[4][4]) {
+#ifdef PBRLAB_WITH_EMBREE
   float transform_[4][4];
   for (size_t i = 0; i < 4; i++) {
     for (size_t j = 0; j < 4; j++) {
@@ -81,19 +95,27 @@ uint32_t Raytracer::Impl::CreateInstanceFromLocalScene(
   rtcCommitScene(embree_global_scene_);
 
   return instance_id;
+#else
+  return tinybvh_impl_->CreateInstanceFromLocalScene(local_scene_id, transform);
+#endif
 }
 
 uint32_t Raytracer::Impl::CreateLocalScene(void) {
+#ifdef PBRLAB_WITH_EMBREE
   const uint32_t local_scene_id = uint32_t(local_scenes_.size());
   local_scenes_.emplace_back();
   local_scenes_.back().embree_scene = rtcNewScene(embree_device_);
   return local_scene_id;
+#else
+  return tinybvh_impl_->CreateLocalScene();
+#endif
 }
 
 uint32_t Raytracer::Impl::AddTriangleMeshToLocalScene(
     const uint32_t local_scene_id, const float* vertices,
     const uint32_t num_vertices, const uint32_t* faces,
     const uint32_t num_faces) {
+#ifdef PBRLAB_WITH_EMBREE
   RTCGeometry geom = rtcNewGeometry(embree_device_, RTC_GEOMETRY_TYPE_TRIANGLE);
 
   const uint32_t triangle_mesh_id =
@@ -149,12 +171,16 @@ uint32_t Raytracer::Impl::AddTriangleMeshToLocalScene(
   rtcReleaseGeometry(geom);
 
   return local_geom_id;
+#else
+  return tinybvh_impl_->AddTriangleMeshToLocalScene(local_scene_id, vertices, num_vertices, faces, num_faces);
+#endif
 }
 
 uint32_t Raytracer::Impl::AddCubicBezierCurveMeshToLocalScene(
     const uint32_t local_scene_id, const float* vertices_thickness,
     const uint32_t num_vertices, const uint32_t* indices,
     const uint32_t num_segments) {
+#ifdef PBRLAB_WITH_EMBREE
   RTCGeometry geom =
       rtcNewGeometry(embree_device_, RTC_GEOMETRY_TYPE_FLAT_BEZIER_CURVE);
 
@@ -194,9 +220,13 @@ uint32_t Raytracer::Impl::AddCubicBezierCurveMeshToLocalScene(
   rtcReleaseGeometry(geom);
 
   return local_geom_id;
+#else
+  return tinybvh_impl_->AddCubicBezierCurveMeshToLocalScene(local_scene_id, vertices_thickness, num_vertices, indices, num_segments);
+#endif
 }
 
 bool Raytracer::Impl::GetSceneAABB(float* bmin, float* bmax) const {
+#ifdef PBRLAB_WITH_EMBREE
   if (embree_global_scene_ == nullptr) return false;
   RTCBounds rtc_bounds;
   rtcGetSceneBounds(embree_global_scene_, &rtc_bounds);
@@ -208,8 +238,12 @@ bool Raytracer::Impl::GetSceneAABB(float* bmin, float* bmax) const {
   bmax[1] = rtc_bounds.upper_y;
   bmax[2] = rtc_bounds.upper_z;
   return true;
+#else
+  return tinybvh_impl_->GetSceneAABB(bmin, bmax);
+#endif
 }
 
+#ifdef PBRLAB_WITH_EMBREE
 static void Normalize(float* v) {
   // TODO : increase efficiency
   const float inv_norm =
@@ -264,26 +298,35 @@ static RTCRayHit SetRayHit(const float* ray_org, const float* ray_dir,
 
   return rayhit;
 }
+#endif // PBRLAB_WITH_EMBREE
 
 TraceResult Raytracer::Impl::FirstHitTrace1(const float* ray_org,
                                             const float* ray_dir,
                                             const float min_t,
                                             const float max_t) const {
+#ifdef PBRLAB_WITH_EMBREE
   RTCRayHit rayhit = SetRayHit(ray_org, ray_dir, min_t, max_t);
 
   //IntersectContext context;
   rtcIntersect1(embree_global_scene_, &rayhit); //,&(context.args), &rayhit);
 
   return EmbreeRayToTraceResult(rayhit);
+#else
+  return tinybvh_impl_->FirstHitTrace1(ray_org, ray_dir, min_t, max_t);
+#endif
 }
 
 bool Raytracer::Impl::AnyHit1(const float* ray_org, const float* ray_dir,
                               const float min_t, const float max_t) const {
+#ifdef PBRLAB_WITH_EMBREE
   RTCRayHit rayhit = SetRayHit(ray_org, ray_dir, min_t, max_t);
   //IntersectContext context;
   const float tmp = rayhit.ray.tfar;
   rtcOccluded1(embree_global_scene_, &(rayhit.ray)); //&(context).context, &(rayhit.ray));
   return (std::fabs(tmp - rayhit.ray.tfar) > 1e-6f);
+#else
+  return tinybvh_impl_->AnyHit1(ray_org, ray_dir, min_t, max_t);
+#endif
 }
 
 }  // namespace raytracer

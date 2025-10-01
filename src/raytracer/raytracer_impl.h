@@ -3,18 +3,28 @@
 
 #include <tuple>
 #include <vector>
+#include <memory>
 
-#include "embree4/rtcore.h"
 #include "raytracer/mesh.h"
 #include "raytracer/raytracer.h"
+
+// Choose backend based on compile-time flag
+#ifdef PBRLAB_WITH_EMBREE
+#include "embree4/rtcore.h"
+#else
+// Forward declaration for tinybvh backend
+namespace pbrlab { namespace raytracer { class TinyBVHRaytracer; } }
+#endif
 
 namespace pbrlab {
 namespace raytracer {
 
+#ifdef PBRLAB_WITH_EMBREE
 struct LocalScene {
   RTCScene embree_scene;
   std::vector<std::tuple<GeometryType, uint32_t>> mesh_data_ids;
 };
+#endif
 
 class Raytracer::Impl {
 public:
@@ -48,6 +58,7 @@ public:
                const float max_t) const;
 
 private:
+#ifdef PBRLAB_WITH_EMBREE
   RTCDevice embree_device_      = nullptr;
   RTCScene embree_global_scene_ = nullptr;
   std::vector<LocalScene> local_scenes_;
@@ -56,6 +67,9 @@ private:
   std::vector<CubicBezierCurveMesh> cubic_bezier_curve_meshes_;
 
   uint32_t create_instance_counter_ = 0;
+#else
+  std::unique_ptr<TinyBVHRaytracer> tinybvh_impl_;
+#endif
 };
 
 }  // namespace raytracer

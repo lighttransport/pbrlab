@@ -1,6 +1,8 @@
 #include "raytracer/raytracer.h"
 
+#ifdef PBRLAB_WITH_EMBREE
 #include <embree4/rtcore.h>
+#endif
 
 #include "raytracer/raytracer_impl.h"
 
