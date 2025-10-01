@@ -1,6 +1,7 @@
 #include "scene.h"
 
 #include <exception>
+#include <stdexcept>
 #include <memory>
 #include <variant>
 
